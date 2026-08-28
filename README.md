@@ -1,92 +1,83 @@
-# ARS Futuro - Guía de Instalación y Ejecución
+# ARS Futuro
 
-Este repositorio contiene la aplicación **ARS Futuro**, un proyecto web desarrollado con **Vite** y **Node.js**.
+Sistema de gestión para una Administradora de Riesgos de Salud (ARS). El proyecto está dividido en un cliente web React y una API REST MVC con Express, PostgreSQL y Prisma.
 
----
+## Estructura
 
-## 📋 Requisitos Previos
-
-Antes de comenzar, asegúrate de tener instalado en tu sistema:
-- [Node.js](https://nodejs.org/) (versión LTS recomendada, incluye `npm`).
-- [Git](https://git-scm.com/) (opcional, para clonar el repositorio).
-- Un editor de código como [Visual Studio Code](https://code.visualstudio.com/).
-
----
-
-## ⚠️ Solución Prevención de Errores en Windows (PowerShell)
-
-Si usas Windows y la consola te muestra un error sobre la ejecución de scripts bloqueados (`ps1` script execution policy), ejecuta este comando en la terminal **PowerShell** antes de continuar:
-
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```text
+arsfuturo/
+├── FrontEnd/          # React + Vite + Tailwind
+├── backend/           # Express + Prisma + PostgreSQL
+│   ├── prisma/        # Esquema y seed de Prisma
+│   └── sql/           # Scripts de creación y datos demo
+├── docs/              # Diagramas UML
+└── GUION_PRESENTACION.md
 ```
-*(Presiona `Y` y luego Enter cuando te pregunte si confirmas el cambio).*
-
----
-
-## 🚀 Pasos para Instalar y Ejecutar la Aplicación
-
-### 1. Obtener el Proyecto
-Clona el repositorio o descárgalo y descomprímelo en tu equipo:
-```bash
-git clone <URL_DEL_REPOSITORIO>
-```
-Navega hasta la carpeta raíz del proyecto:
-```bash
-cd ARSFuturo-main
-```
-
----
-
-### 2. Instalar Dependencias
-Instala los paquetes de Node.js necesarios ejecutando:
-```bash
-npm install
-```
-
----
-
-### 3. Ejecutar en Modo Desarrollo
-Para iniciar el servidor local de desarrollo con Vite, ejecuta:
-```bash
-npm run dev
-```
-
-Una vez iniciada la aplicación, la terminal te indicará la URL local para acceder desde el navegador (por defecto):
-👉 **http://localhost:5173/**
-
----
-
-## 🛠️ Comandos Útiles
-
-| Comando | Descripción |
-| :--- | :--- |
-| `npm install` | Instala todas las dependencias declaradas en el `package.json`. |
-| `npm run dev` | Inicia el servidor local de desarrollo con recarga rápida (HMR). |
-| `npm run build` | Compila y genera los archivos optimizados para producción en la carpeta `dist/`. |
-| `npm run preview` | Permite previsualizar la build de producción de forma local. |
-
----
-
-## 💡 Notas Adicionales
-- Para detener el servidor de desarrollo en la terminal, presiona `Ctrl + C`.
-- Si experimentas advertencias de paquetes obsoletos en Vite, puedes actualizar dependencias dev con `npm i <paquete>@latest -D`.
-
-
-# ARS Salud · Demo (React + Vite + Tailwind)
 
 ## Requisitos
-- Node.js 18+
 
-## Instalación
-```bash
+- Node.js **20 o superior** (npm viene incluido con Node.js).
+- PostgreSQL 14 o superior.
+- Git (opcional).
+
+Comprueba tus versiones con:
+
+```powershell
+node --version
+npm --version
+psql --version
+```
+
+## Configurar la base de datos
+
+Desde `backend/`, crea y carga la base de datos con los scripts SQL:
+
+```powershell
+psql -U postgres -d postgres -c "CREATE DATABASE ars_futuro"
+psql -U postgres -d ars_futuro -f .\sql\init-postgresql.sql
+psql -U postgres -d ars_futuro -f .\sql\seed-postgresql.sql
+```
+
+> Si ya ejecutaste `CREATE DATABASE`, omite el primer comando. Los usuarios demo son `admin/admin123`, `agente/agente123` y `supervisor/super123`.
+
+## Ejecutar en desarrollo
+
+Abre dos terminales desde la raíz del repositorio.
+
+### Backend
+
+```powershell
+cd backend
+Copy-Item .env.example .env
+# Edita .env y define DATABASE_URL y JWT_SECRET.
+npm install
+npm run prisma:generate
+npm run dev
+```
+
+La API queda disponible en `http://localhost:4000`, su estado en `/health` y la documentación en `/api/docs`.
+
+### Frontend
+
+```powershell
+cd FrontEnd
 npm install
 npm run dev
 ```
 
-## Dependencias principales
-- React, Vite
-- TailwindCSS
-- framer-motion
-- lucide-react
-- recharts
+La interfaz queda disponible en `http://localhost:5173`.
+
+## Comandos útiles
+
+| Ubicación | Comando | Propósito |
+| --- | --- | --- |
+| `FrontEnd/` | `npm run build` | Genera la compilación de producción. |
+| `FrontEnd/` | `npm run preview` | Sirve la compilación localmente. |
+| `backend/` | `npm run prisma:generate` | Genera el cliente Prisma. |
+| `backend/` | `npm run prisma:seed` | Carga datos demo mediante Prisma. |
+| `backend/` | `npm test` | Ejecuta las pruebas del backend. |
+
+## Notas
+
+- `node_modules` no se versiona. Si una instalación se interrumpe, elimina la carpeta `node_modules` dentro del componente afectado y ejecuta `npm install` otra vez.
+- La conexión entre el frontend y la API se realizará mediante Axios; los datos de demostración actuales del cliente todavía no han sido reemplazados por llamadas HTTP.

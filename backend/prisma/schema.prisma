@@ -6,34 +6,68 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-enum Rol { ADMINISTRADOR AGENTE SUPERVISOR }
-enum EstadoAfiliado { ACTIVO SUSPENDIDO INACTIVO }
-enum EstadoAutorizacion { PENDIENTE APROBADA RECHAZADA }
-enum EstadoReclamo { EN_REVISION APROBADA RECHAZADA }
-enum EstadoPoliza { VIGENTE EN_GRACIA SUSPENDIDA VENCIDA }
-enum EstadoFactura { PENDIENTE PAGADA ATRASADA EN_GRACIA }
-enum EstadoServicio { PENDIENTE_PAGO PAGADO }
-enum EstadoPago { PROCESADO RECHAZADO }
+enum Rol {
+  ADMINISTRADOR
+  AGENTE
+  SUPERVISOR
+}
+enum EstadoAfiliado {
+  ACTIVO
+  SUSPENDIDO
+  INACTIVO
+}
+enum EstadoAutorizacion {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+}
+enum EstadoReclamo {
+  EN_REVISION
+  APROBADA
+  RECHAZADA
+}
+enum EstadoPoliza {
+  VIGENTE
+  EN_GRACIA
+  SUSPENDIDA
+  VENCIDA
+}
+enum EstadoFactura {
+  PENDIENTE
+  PAGADA
+  ATRASADA
+  EN_GRACIA
+}
+enum EstadoServicio {
+  PENDIENTE_PAGO
+  PAGADO
+}
+enum EstadoPago {
+  PROCESADO
+  RECHAZADO
+}
 
 model Usuario {
   id String @id @default(uuid())
   usuario String @unique
   nombre String
-  passwordHash String
+  passwordHash String @map("password_hash")
   rol Rol
   notificaciones Notificacion[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("usuarios")
 }
 model Plan {
   id String @id
   nombre String
-  copagoConsulta Decimal @db.Decimal(12,2)
+  copagoConsulta Decimal @db.Decimal(12,2) @map("copago_consulta")
   cobertura Json
   afiliados Afiliado[]
   polizas Poliza[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("planes")
 }
 model Proveedor {
   id String @id @default(uuid())
@@ -45,32 +79,34 @@ model Proveedor {
   reclamos Reclamo[]
   servicios ServicioMedico[]
   pagos PagoProveedor[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   @@index([ciudad, tipo])
+  @@map("proveedores")
 }
 model Poliza {
   id String @id
   empresa String
-  planId String
+  planId String @map("plan_id")
   desde DateTime @db.Date
   hasta DateTime @db.Date
-  primaMensual Decimal @db.Decimal(14,2)
+  primaMensual Decimal @db.Decimal(14,2) @map("prima_mensual")
   asegurados Int @default(0)
   estado EstadoPoliza @default(VIGENTE)
   plan Plan @relation(fields: [planId], references: [id])
   afiliados Afiliado[]
   facturas Factura[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   @@index([estado])
+  @@map("polizas")
 }
 model Afiliado {
   id String @id @default(uuid())
   nombre String
   cedula String @unique
-  planId String
-  polizaId String?
+  planId String @map("plan_id")
+  polizaId String? @map("poliza_id")
   estado EstadoAfiliado @default(ACTIVO)
   desde DateTime @db.Date
   nacimiento DateTime? @db.Date
@@ -82,14 +118,15 @@ model Afiliado {
   autorizaciones Autorizacion[]
   reclamos Reclamo[]
   servicios ServicioMedico[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   @@index([estado])
+  @@map("afiliados")
 }
 model Autorizacion {
   id String @id @default(uuid())
-  afiliadoId String
-  proveedorId String
+  afiliadoId String @map("afiliado_id")
+  proveedorId String @map("proveedor_id")
   procedimiento String
   copago Decimal @db.Decimal(12,2)
   estado EstadoAutorizacion @default(PENDIENTE)
@@ -97,28 +134,30 @@ model Autorizacion {
   afiliado Afiliado @relation(fields: [afiliadoId], references: [id])
   proveedor Proveedor @relation(fields: [proveedorId], references: [id])
   servicios ServicioMedico[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   @@index([estado, fecha])
+  @@map("autorizaciones")
 }
 model Reclamo {
   id String @id @default(uuid())
-  afiliadoId String
-  proveedorId String
+  afiliadoId String @map("afiliado_id")
+  proveedorId String @map("proveedor_id")
   monto Decimal @db.Decimal(14,2)
   estado EstadoReclamo @default(EN_REVISION)
   fecha DateTime @default(now()) @db.Date
   afiliado Afiliado @relation(fields: [afiliadoId], references: [id])
   proveedor Proveedor @relation(fields: [proveedorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   @@index([estado, fecha])
+  @@map("reclamos")
 }
 model ServicioMedico {
   id String @id @default(uuid())
-  afiliadoId String
-  proveedorId String
-  autorizacionId String?
+  afiliadoId String @map("afiliado_id")
+  proveedorId String @map("proveedor_id")
+  autorizacionId String? @map("autorizacion_id")
   descripcion String
   costo Decimal @db.Decimal(14,2)
   copago Decimal @db.Decimal(12,2)
@@ -128,49 +167,53 @@ model ServicioMedico {
   proveedor Proveedor @relation(fields: [proveedorId], references: [id])
   autorizacion Autorizacion? @relation(fields: [autorizacionId], references: [id])
   pago PagoProveedor?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   @@index([estado, fecha])
+  @@map("servicios_medicos")
 }
 model PagoProveedor {
   id String @id @default(uuid())
-  proveedorId String
-  servicioId String @unique
-  referenciaBanco String @unique
+  proveedorId String @map("proveedor_id")
+  servicioId String @unique @map("servicio_id")
+  referenciaBanco String @unique @map("referencia_banco")
   monto Decimal @db.Decimal(14,2)
   metodo String
   fecha DateTime @default(now()) @db.Date
   estado EstadoPago @default(PROCESADO)
   proveedor Proveedor @relation(fields: [proveedorId], references: [id])
   servicio ServicioMedico @relation(fields: [servicioId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("pagos_proveedores")
 }
 model Factura {
   id String @id @default(uuid())
-  polizaId String
+  polizaId String @map("poliza_id")
   periodo String
   emision DateTime @db.Date
   vencimiento DateTime @db.Date
   monto Decimal @db.Decimal(14,2)
   estado EstadoFactura @default(PENDIENTE)
-  fechaPago DateTime? @db.Date
+  fechaPago DateTime? @db.Date @map("fecha_pago")
   referencia String? @unique
-  recordatorioEnviado Boolean @default(false)
+  recordatorioEnviado Boolean @default(false) @map("recordatorio_enviado")
   poliza Poliza @relation(fields: [polizaId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   @@unique([polizaId, periodo])
   @@index([estado, vencimiento])
+  @@map("facturas")
 }
 model Notificacion {
   id String @id @default(uuid())
-  usuarioId String?
+  usuarioId String? @map("usuario_id")
   tipo String
   titulo String?
   mensaje String
   leida Boolean @default(false)
   usuario Usuario? @relation(fields: [usuarioId], references: [id])
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
   @@index([usuarioId, leida])
+  @@map("notificaciones")
 }
