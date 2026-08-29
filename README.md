@@ -1,4 +1,22 @@
+
 # ARS Futuro - Guía de Instalación y Ejecución
+
+**Asignatura:** INF-5250 – Ingeniería de Software II  
+**Proyecto:** ARS Futuro
+
+---
+
+## 👥 Integrantes del equipo
+| Integrante                       | Matrícula |
+| -------------------------------- | --------: |
+| Anderson Antonio Castillo Peláez | 100631535 |
+| Kleiber Gabriel Pérez Montero    | 100453725 |
+| Eric Vladimir Tejada Nieve       |    FF1944 |
+| Mayobanex Vicente Soto           | 100417556 |
+
+---
+
+## 📋 Descripción
 
 Este repositorio contiene la aplicación **ARS Futuro**, un proyecto web desarrollado con **Vite** y **Node.js**.
 
