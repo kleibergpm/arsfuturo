@@ -41,173 +41,25 @@ import {
   PieChart,
   Pie,
 } from "recharts";
+import { authApi, mutationsApi, resourcesApi } from "./api/client";
+import {
+  adaptAfiliado,
+  adaptAutorizacion,
+  adaptCollection,
+  adaptFactura,
+  adaptPago,
+  adaptPlan,
+  adaptPoliza,
+  adaptProveedor,
+  adaptReclamo,
+  adaptServicio,
+  adaptUser,
+} from "./api/adapters";
+import { PLANES, canAuthorize, getPlanById } from "./data/plans";
+import { Badge, Button, Card, Divider, Input, Modal, NotificationContainer, Select, cls } from "./components/ui";
 
 const currency = (n) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
 const formatDate = (d) => new Intl.DateTimeFormat("es-DO").format(new Date(d));
-const cls = (...s) => s.filter(Boolean).join(" ");
-
-const Card = ({ className = "", children }) => (
-  <div className={cls("rounded-2xl bg-white/70 backdrop-blur shadow-sm border border-slate-200 p-4", className)}>
-    {children}
-  </div>
-);
-
-const Button = ({ children, onClick, variant = "primary", size = "md", className = "", disabled=false, type="button" }) => {
-  const variants = {
-    primary: "bg-sky-600 hover:bg-sky-700 text-white",
-    ghost: "bg-transparent hover:bg-slate-100 text-slate-700 border border-slate-200",
-    success: "bg-emerald-600 hover:bg-emerald-700 text-white",
-    danger: "bg-rose-600 hover:bg-rose-700 text-white",
-    warning: "bg-amber-600 hover:bg-amber-700 text-white",
-  };
-  const sizes = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2",
-    lg: "px-5 py-3 text-lg",
-  };
-  return (
-    <button type={type} disabled={disabled} onClick={onClick} className={cls("rounded-xl transition-colors", variants[variant], sizes[size], disabled && "opacity-60 cursor-not-allowed", className)}>
-      {children}
-    </button>
-  );
-}
-
-// Componente para el sistema de notificaciones
-function NotificationContainer({ notifications, onRemove }) {
-  return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
-      <AnimatePresence>
-        {notifications.map((notification) => (
-          <NotificationCard 
-            key={notification.id} 
-            notification={notification} 
-            onRemove={onRemove} 
-          />
-        ))}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function NotificationCard({ notification, onRemove }) {
-  const { id, message, type, title } = notification;
-  
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle2 className="w-5 h-5 text-green-600" />;
-      case 'error':
-        return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'info':
-        return <Bell className="w-5 h-5 text-blue-600" />;
-      default:
-        return <CheckCircle2 className="w-5 h-5 text-green-600" />;
-    }
-  };
-
-  const getBgColor = () => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 border-green-200';
-      case 'error':
-        return 'bg-red-50 border-red-200';
-      case 'info':
-        return 'bg-blue-50 border-blue-200';
-      default:
-        return 'bg-green-50 border-green-200';
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 300, scale: 0.8 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 300, scale: 0.8 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`${getBgColor()} border rounded-lg p-4 shadow-lg backdrop-blur-sm`}
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-0.5">
-          {getIcon()}
-        </div>
-        <div className="flex-1 min-w-0">
-          {title && (
-            <p className="text-sm font-semibold text-slate-900 mb-1">
-              {title}
-            </p>
-          )}
-          <p className="text-sm text-slate-700 leading-relaxed">
-            {message}
-          </p>
-        </div>
-        <button
-          onClick={() => onRemove(id)}
-          className="flex-shrink-0 ml-2 text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-    </motion.div>
-  );
-};
-
-const Badge = ({ children, color = "slate", className = "" }) => (
-  <span className={cls(
-    "px-2 py-0.5 rounded-full text-xs font-medium border",
-    color === "green" && "bg-emerald-50 text-emerald-700 border-emerald-200",
-    color === "red" && "bg-rose-50 text-rose-700 border-rose-200",
-    color === "amber" && "bg-amber-50 text-amber-700 border-amber-200",
-    color === "blue" && "bg-sky-50 text-sky-700 border-sky-200",
-    color === "slate" && "bg-slate-50 text-slate-700 border-slate-200",
-    className
-  )}>{children}</span>
-);
-
-const Input = ({ value, onChange, placeholder = "", type = "text", className = "", ...rest }) => (
-  <input
-    type={type}
-    value={value}
-    onChange={(e) => onChange?.(e.target.value)}
-    placeholder={placeholder}
-    className={cls("w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300", className)}
-    {...rest}
-  />
-);
-
-const Select = ({ value, onChange, children, className = "" }) => (
-  <select value={value} onChange={(e) => onChange?.(e.target.value)} className={cls("w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300", className)}>
-    {children}
-  </select>
-);
-
-const Divider = () => <div className="h-px w-full bg-slate-200" />;
-
-const Modal = ({ open, onClose, title, children, footer }) => (
-  <AnimatePresence>
-    {open && (
-      <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-        <div className="absolute inset-0 bg-slate-900/40" onClick={onClose} />
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-3 sm:p-4 shadow-xl">
-          <div className="flex items-center justify-between gap-2 sm:gap-4">
-            <h3 className="text-base sm:text-lg font-semibold truncate">{title}</h3>
-            <button className="p-1 sm:p-2 rounded-lg hover:bg-slate-100 flex-shrink-0" onClick={onClose}>
-              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
-            </button>
-          </div>
-          <div className="mt-3">{children}</div>
-          {footer && <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">{footer}</div>}
-        </motion.div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
-
-const PLANES = [
-  { id: "BASICO", nombre: "Plan Basico de Salud (PBS)", copagoConsulta: 200, cobertura: { consultas: true, laboratorio: true, emergencias: true, hospitalizacion: true } },
-  { id: "PLUS", nombre: "Plan Complementario", copagoConsulta: 100, cobertura: { consultas: true, laboratorio: true, emergencias: true, hospitalizacion: true, odontologia: true } },
-  { id: "PREMIUM", nombre: "Plan Premium", copagoConsulta: 50, cobertura: { consultas: true, laboratorio: true, emergencias: true, hospitalizacion: true, odontologia: true, saludMental: true } },
-];
-
 const proveedoresSeed = [
   { id: 1, nombre: "Hospital General Plaza de la Salud", tipo: "Hospital", ciudad: "Santo Domingo", telefono: "+1 809 555 0001" },
   { id: 2, nombre: "CEDIMAT", tipo: "Imagenologia", ciudad: "Santo Domingo", telefono: "+1 809 555 0002" },
@@ -286,23 +138,8 @@ const usuariosDemo = [
   { id: 3, usuario: "supervisor", password: "super123", nombre: "Supervisor", rol: "Supervisor" },
 ];
 
-function getPlanById(id) {
-  return PLANES.find((p) => p.id === id) || PLANES[0];
-}
-
-function canAuthorize(afiliado, procedimiento) {
-  const plan = getPlanById(afiliado.plan);
-  const p = procedimiento.toLowerCase();
-  if (p.includes("consulta")) return plan.cobertura.consultas;
-  if (p.includes("rayos") || p.includes("imagen")) return plan.cobertura.emergencias || plan.cobertura.hospitalizacion;
-  if (p.includes("laborat")) return plan.cobertura.laboratorio;
-  if (p.includes("odont")) return plan.cobertura.odontologia || false;
-  if (p.includes("psico") || p.includes("mental")) return plan.cobertura.saludMental || false;
-  return true;
-}
-
 function exportCsv(filename, rows) {
-  const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replaceAll('"', '""')}"`).join(",")).join("\n");
+  const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -321,6 +158,7 @@ export default function ARS_Futuro_App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ usuario: "", password: "" });
   const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const [afiliados, setAfiliados] = useState(afiliadosSeed);
   const [autorizaciones, setAutorizaciones] = useState(autorizacionesSeed);
@@ -339,10 +177,46 @@ export default function ARS_Futuro_App() {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
+    const token = localStorage.getItem("arsfuturo_token");
+    if (!token) return;
+    authApi.me().then((user) => {
+      const authenticatedUser = adaptUser(user);
+      setCurrentUser(authenticatedUser);
+      setRole(authenticatedUser.rol);
+      setIsAuthenticated(true);
+    }).catch(() => {
+      localStorage.removeItem("arsfuturo_token");
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
     setLoading(true);
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
-  }, [tab]);
+    const isAdmin = currentUser?.rol === "Administrador";
+    Promise.all([
+      isAdmin ? resourcesApi.planes() : Promise.resolve([]),
+      resourcesApi.afiliados(),
+      resourcesApi.autorizaciones(),
+      resourcesApi.reclamos(),
+      resourcesApi.proveedores(),
+      isAdmin ? resourcesApi.polizas() : Promise.resolve([]),
+      resourcesApi.servicios(),
+      isAdmin ? resourcesApi.pagos() : Promise.resolve([]),
+      isAdmin ? resourcesApi.facturas() : Promise.resolve([]),
+    ]).then(([planes, afiliadosData, autorizacionesData, reclamosData, proveedoresData, polizasData, serviciosData, pagosData, facturasData]) => {
+      if (planes.length) PLANES.splice(0, PLANES.length, ...adaptCollection(planes, adaptPlan));
+      setAfiliados(adaptCollection(afiliadosData, adaptAfiliado));
+      setAutorizaciones(adaptCollection(autorizacionesData, adaptAutorizacion));
+      setReclamaciones(adaptCollection(reclamosData, adaptReclamo));
+      setProveedores(adaptCollection(proveedoresData, adaptProveedor));
+      setPolizas(adaptCollection(polizasData, adaptPoliza));
+      setServicios(adaptCollection(serviciosData, adaptServicio));
+      setPagos(adaptCollection(pagosData, adaptPago));
+      setFacturas(adaptCollection(facturasData, adaptFactura));
+    }).catch(() => {
+      addNotification({ type: "error", title: "Error de conexión", message: "No fue posible cargar los datos del backend." });
+    }).finally(() => setLoading(false));
+  }, [isAuthenticated, currentUser?.rol]);
 
   const afiliadosFiltrados = useMemo(() => {
     return afiliados.filter((a) => a.nombre.toLowerCase().includes(q.toLowerCase()) || a.cedula.includes(q));
@@ -406,147 +280,125 @@ export default function ARS_Futuro_App() {
     return porPlan;
   }, [autorizaciones, afiliados]);
 
-  const aprobarAut = (id) => {
+  const aprobarAut = async (id) => {
     // Solo administradores y supervisores pueden aprobar autorizaciones
     if (!currentUser || !["Administrador", "Supervisor"].includes(currentUser.rol)) {
       alert("No tienes permisos para aprobar autorizaciones");
       return;
     }
+    await mutationsApi.aprobarAutorizacion(id);
     setAutorizaciones((prev) => prev.map((a) => a.id === id ? { ...a, estado: "Aprobada" } : a));
   };
-  const rechazarAut = (id) => {
+  const rechazarAut = async (id) => {
     // Solo administradores y supervisores pueden rechazar autorizaciones
     if (!currentUser || !["Administrador", "Supervisor"].includes(currentUser.rol)) {
       alert("No tienes permisos para rechazar autorizaciones");
       return;
     }
+    await mutationsApi.rechazarAutorizacion(id);
     setAutorizaciones((prev) => prev.map((a) => a.id === id ? { ...a, estado: "Rechazada" } : a));
   };
 
-  const registrarReclamo = ({ afiliadoId, proveedorId, monto }) => {
-    const id = Math.max(0, ...reclamaciones.map((r) => r.id)) + 1;
-    const nuevo = { id, afiliadoId, proveedorId, monto: Number(monto), estado: "En revisión", fecha: new Date().toISOString().slice(0, 10) };
+  const registrarReclamo = async ({ afiliadoId, proveedorId, monto }) => {
+    const nuevo = adaptReclamo(await mutationsApi.reclamo({ afiliadoId, proveedorId, monto: Number(monto) }));
     setReclamaciones((prev) => [nuevo, ...prev]);
   };
 
-  const crearAutorizacion = ({ afiliadoId, proveedorId, procedimiento }) => {
-    const af = afiliados.find((a) => a.id === Number(afiliadoId));
-    const id = Math.max(0, ...autorizaciones.map((a) => a.id)) + 1;
-    let estado = "Pendiente";
-    let copago = 0;
-    if (af && canAuthorize(af, procedimiento)) {
-      estado = "Aprobada";
-      copago = getPlanById(af.plan).copagoConsulta;
-    }
-    const nueva = { id, afiliadoId: Number(afiliadoId), proveedorId: Number(proveedorId), procedimiento, estado, fecha: new Date().toISOString().slice(0, 10), copago };
+  const crearAutorizacion = async ({ afiliadoId, proveedorId, procedimiento }) => {
+    const af = afiliados.find((a) => String(a.id) === String(afiliadoId));
+    if (!af) return null;
+    const nueva = adaptAutorizacion(await mutationsApi.autorizacion({ afiliadoId, proveedorId, procedimiento }));
     setAutorizaciones((prev) => [nueva, ...prev]);
     return nueva;
   };
 
   // Registrar Servicio Médico (CU07)
-  const registrarServicio = ({ afiliadoId, proveedorId, descripcion, costo, autorizacionId }) => {
-    const af = afiliados.find(a => a.id === Number(afiliadoId));
-    const id = Math.max(0, ...servicios.map(s => s.id)) + 1;
-    let copago = af ? getPlanById(af.plan).copagoConsulta : 0;
-    const estado = "Pendiente de Pago";
-    const nuevo = { id, afiliadoId: Number(afiliadoId), proveedorId: Number(proveedorId), descripcion, costo: Number(costo), fecha: new Date().toISOString().slice(0, 10), estado, autorizacionId: autorizacionId ? Number(autorizacionId) : undefined, copago };
+  const registrarServicio = async ({ afiliadoId, proveedorId, descripcion, costo, autorizacionId }) => {
+    const nuevo = adaptServicio(await mutationsApi.servicio({ afiliadoId, proveedorId, descripcion, costo: Number(costo), autorizacionId: autorizacionId || null }));
     setServicios(prev => [nuevo, ...prev]);
     return nuevo;
   };
 
   // Emitir Pago a Proveedor (CU08) — solo Administrador
-  const emitirPago = ({ servicioId, monto, referenciaBanco, metodo = "Transferencia" }) => {
+  const emitirPago = async ({ servicioId, monto, referenciaBanco, metodo = "Transferencia" }) => {
     if (!currentUser || currentUser.rol !== "Administrador") {
       alert("No tienes permisos para emitir pagos");
       return null;
     }
-    const id = Math.max(0, ...pagos.map(p => p.id)) + 1;
-    const servicio = servicios.find(s => s.id === Number(servicioId));
-    const proveedorId = servicio?.proveedorId ?? null;
-    const nuevo = { id, proveedorId, servicioId: Number(servicioId), referenciaBanco, monto: Number(monto), fecha: new Date().toISOString().slice(0, 10), estado: "Procesado", metodo };
+    const nuevo = adaptPago(await mutationsApi.pago({ servicioId, monto: Number(monto), referenciaBanco, metodo }));
     setPagos(prev => [nuevo, ...prev]);
-    if (servicio) {
-      setServicios(prev => prev.map(s => s.id === servicio.id ? { ...s, estado: "Pagado" } : s));
-    }
+    setServicios(prev => prev.map(s => String(s.id) === String(servicioId) ? { ...s, estado: "Pagado" } : s));
     return nuevo;
   };
 
   // Crear nuevo afiliado
-  const crearAfiliado = ({ nombre, cedula, plan, estado = "Activo", desde, nacimiento, telefono, correo, dependientes = 0 }) => {
-    const id = Math.max(0, ...afiliados.map(a => a.id)) + 1;
-    const nuevo = {
-      id,
+  const crearAfiliado = async ({ nombre, cedula, plan, estado = "Activo", desde, nacimiento, telefono, correo, dependientes = 0 }) => {
+    const nuevo = adaptAfiliado(await mutationsApi.afiliado({
       nombre: nombre?.trim(),
       cedula: cedula?.trim(),
-      plan,
-      estado,
-      desde: desde || new Date().toISOString().slice(0,10),
-      nacimiento: nacimiento || "",
-      telefono: telefono || "",
-      correo: correo || "",
+      planId: plan,
+      estado: estado === "Activo" ? "ACTIVO" : "SUSPENDIDO",
+      desde: desde || new Date().toISOString().slice(0, 10),
+      nacimiento: nacimiento || null,
+      telefono: telefono || null,
+      correo: correo || null,
       dependientes: Number(dependientes) || 0,
-    };
+    }));
     setAfiliados(prev => [nuevo, ...prev]);
     addNotification({ type: 'success', title: 'Afiliado creado', message: `${nuevo.nombre} agregado con ID ${nuevo.id}.` });
     return nuevo;
   };
 
   // Actualizar datos de afiliado (CU10)
-  const actualizarAfiliado = (id, { telefono, correo }) => {
-    setAfiliados(prev => prev.map(a => a.id === id ? { ...a, telefono, correo } : a));
+  const actualizarAfiliado = async (id, { telefono, correo }) => {
+    const actualizado = adaptAfiliado(await mutationsApi.actualizarAfiliado(id, { telefono, correo }));
+    setAfiliados(prev => prev.map(a => a.id === id ? actualizado : a));
   };
 
   // Facturación de pólizas (Pago de Prima Mensual)
-  const generarFacturasMes = () => {
+  const generarFacturasMes = async () => {
     const periodo = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
     const yaExisten = facturas.some(f => f.periodo === periodo);
     if (yaExisten) {
       addNotification({ id: Date.now(), type: 'info', title: 'Facturación', message: `Las facturas del periodo ${periodo} ya existen.` });
       return [];
     }
-    const nuevas = polizas.map(p => ({
-      id: Math.max(0, ...facturas.map(f=>f.id)) + 1 + Math.floor(Math.random()*1000),
-      polizaId: p.id,
-      periodo,
-      emision: new Date().toISOString().slice(0,10),
-      vencimiento: new Date(new Date().getFullYear(), new Date().getMonth(), 10).toISOString().slice(0,10),
-      monto: p.primaMensual,
-      estado: 'Pendiente',
-      fechaPago: null,
-      referencia: null,
-      recordatorioEnviado: false,
-    }));
+    const nuevas = (await mutationsApi.generarFacturas(periodo)).map(adaptFactura);
     setFacturas(prev => [...nuevas, ...prev]);
     addNotification({ id: Date.now(), type: 'success', title: 'Facturas generadas', message: `Se generaron facturas del periodo ${periodo} para ${nuevas.length} pólizas.` });
     return nuevas;
   };
 
-  const enviarRecordatorioFactura = (id) => {
-    setFacturas(prev => prev.map(f => f.id === id ? { ...f, recordatorioEnviado: true, estado: f.estado === 'Pendiente' ? 'Atrasada' : f.estado } : f));
+  const enviarRecordatorioFactura = async (id) => {
+    const actualizada = adaptFactura(await mutationsApi.recordarFactura(id));
+    setFacturas(prev => prev.map(f => f.id === id ? actualizada : f));
     addNotification({ id: Date.now(), type: 'info', title: 'Recordatorio enviado', message: 'Se envió recordatorio de pago al asegurado.' });
   };
 
-  const registrarPagoPrima = ({ facturaId, referencia }) => {
+  const registrarPagoPrima = async ({ facturaId, referencia }) => {
     const fecha = new Date().toISOString().slice(0,10);
     const factura = facturas.find(f => f.id === facturaId);
     if (!factura) return null;
-    setFacturas(prev => prev.map(f => f.id === facturaId ? { ...f, estado: 'Pagada', fechaPago: fecha, referencia } : f));
+    const actualizada = adaptFactura(await mutationsApi.pagarFactura(facturaId, referencia));
+    setFacturas(prev => prev.map(f => f.id === facturaId ? actualizada : f));
     setPolizas(prev => prev.map(p => p.id === factura.polizaId ? { ...p, estado: 'Vigente' } : p));
     addNotification({ id: Date.now(), type: 'success', title: 'Pago de prima registrado', message: `La póliza ${factura.polizaId} quedó vigente.` });
-    return { ...factura, estado: 'Pagada', fechaPago: fecha, referencia };
+    return actualizada;
   };
 
-  const marcarPeriodoGracia = (facturaId) => {
+  const marcarPeriodoGracia = async (facturaId) => {
     const factura = facturas.find(f => f.id === facturaId);
     if (!factura) return;
-    setFacturas(prev => prev.map(f => f.id === facturaId ? { ...f, estado: 'En gracia' } : f));
+    const actualizada = adaptFactura(await mutationsApi.graciaFactura(facturaId));
+    setFacturas(prev => prev.map(f => f.id === facturaId ? actualizada : f));
     setPolizas(prev => prev.map(p => p.id === factura.polizaId ? { ...p, estado: 'En periodo de gracia' } : p));
     addNotification({ id: Date.now(), type: 'warning', title: 'Periodo de gracia', message: `La póliza ${factura.polizaId} está en periodo de gracia.` });
   };
 
-  const suspenderPolizaPorFactura = (facturaId) => {
+  const suspenderPolizaPorFactura = async (facturaId) => {
     const factura = facturas.find(f => f.id === facturaId);
     if (!factura) return;
+    await mutationsApi.suspenderFactura(facturaId);
     setPolizas(prev => prev.map(p => p.id === factura.polizaId ? { ...p, estado: 'Suspendida' } : p));
     addNotification({ id: Date.now(), type: 'error', title: 'Póliza suspendida', message: `Se suspendió la póliza ${factura.polizaId} por falta de pago.` });
   };
@@ -563,25 +415,31 @@ export default function ARS_Futuro_App() {
   };
 
   // Funciones de autenticación
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
-    
-    const user = usuariosDemo.find(u => 
-      u.usuario === loginForm.usuario && u.password === loginForm.password
-    );
-    
-    if (user) {
+    setLoginLoading(true);
+
+    try {
+      const response = await authApi.login(loginForm);
+      if (!response?.token || !response?.user) {
+        throw new Error("La API devolvió una respuesta de login incompleta");
+      }
+      localStorage.setItem("arsfuturo_token", response.token);
+      const user = adaptUser(response.user);
       setCurrentUser(user);
       setRole(user.rol);
       setIsAuthenticated(true);
       setLoginForm({ usuario: "", password: "" });
-    } else {
-      setLoginError("Usuario o contraseña incorrectos");
+    } catch (error) {
+      setLoginError(error.response?.data?.message || error.message || "No fue posible iniciar sesión");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("arsfuturo_token");
     setIsAuthenticated(false);
     setCurrentUser(null);
     setRole("Agente");
@@ -683,8 +541,8 @@ export default function ARS_Futuro_App() {
               </div>
             )}
             
-            <Button type="submit" className="w-full">
-              Iniciar Sesión
+            <Button type="submit" className="w-full" disabled={loginLoading}>
+              {loginLoading ? "Conectando..." : "Iniciar Sesión"}
             </Button>
           </form>
           
@@ -884,7 +742,7 @@ export default function ARS_Futuro_App() {
                               </div>
                             </td>
                             <td className="py-2 pr-2">
-                              <AfiliadoActions afiliado={a} crearAutorizacion={crearAutorizacion} addNotification={addNotification} onEditarAfiliado={actualizarAfiliado} />
+                              <AfiliadoActions afiliado={a} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} onEditarAfiliado={actualizarAfiliado} />
                             </td>
                           </tr>
                         ))}
@@ -949,7 +807,7 @@ export default function ARS_Futuro_App() {
   );
 }
 
-function AfiliadoActions({ afiliado, crearAutorizacion, addNotification, onEditarAfiliado }) {
+function AfiliadoActions({ afiliado, afiliados, proveedores, crearAutorizacion, addNotification, onEditarAfiliado }) {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   return (
@@ -960,15 +818,15 @@ function AfiliadoActions({ afiliado, crearAutorizacion, addNotification, onEdita
       <Button variant="ghost" size="sm" className="flex items-center justify-center" onClick={() => setOpenEdit(true)}>
         <User className="w-4 h-4 mr-1"/> Editar
       </Button>
-      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliadoDefault={afiliado} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
+      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliadoDefault={afiliado} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
       <EditarAfiliadoModal open={openEdit} onClose={() => setOpenEdit(false)} afiliado={afiliado} onGuardar={onEditarAfiliado} addNotification={addNotification} />
     </div>
   );
 }
 
-function NuevaAutorizacionModal({ open, onClose, afiliadoDefault, crearAutorizacion, addNotification }) {
+function NuevaAutorizacionModal({ open, onClose, afiliadoDefault = null, afiliados = [], proveedores = [], crearAutorizacion, addNotification }) {
   const [afiliadoId, setAfiliadoId] = useState(afiliadoDefault?.id ? String(afiliadoDefault.id) : "");
-  const [proveedorId, setProveedorId] = useState("1");
+  const [proveedorId, setProveedorId] = useState(proveedores[0]?.id ? String(proveedores[0].id) : "");
   const [procedimiento, setProcedimiento] = useState("Consulta general");
   const [valid, setValid] = useState(null);
 
@@ -976,18 +834,19 @@ function NuevaAutorizacionModal({ open, onClose, afiliadoDefault, crearAutorizac
     setAfiliadoId(afiliadoDefault?.id ? String(afiliadoDefault.id) : "");
   }, [afiliadoDefault]);
 
-  const afiliadosAll = afiliadosSeed;
-  const proveedoresAll = proveedoresSeed;
+  const afiliadosAll = afiliados;
+  const proveedoresAll = proveedores;
 
   const validar = () => {
-    const af = afiliadosAll.find((a) => a.id === Number(afiliadoId));
+    const af = afiliadosAll.find((a) => String(a.id) === String(afiliadoId));
     if (!af) return setValid(null);
     setValid(canAuthorize(af, procedimiento));
   };
 
-  const crear = () => {
+  const crear = async () => {
     if (!afiliadoId || !proveedorId || !procedimiento) return;
-    const nueva = crearAutorizacion({ afiliadoId, proveedorId, procedimiento });
+    const nueva = await crearAutorizacion({ afiliadoId, proveedorId, procedimiento });
+    if (!nueva) return;
     setValid(null);
     onClose?.();
     
@@ -1048,8 +907,8 @@ function EditarAfiliadoModal({ open, onClose, afiliado, onGuardar, addNotificati
     setCorreo(afiliado?.correo || "");
   }, [afiliado]);
 
-  const guardar = () => {
-    onGuardar?.(afiliado.id, { telefono, correo });
+  const guardar = async () => {
+    await onGuardar?.(afiliado.id, { telefono, correo });
     addNotification({ id: Date.now(), type: 'success', title: 'Afiliado actualizado', message: `Se guardaron los cambios de ${afiliado.nombre}.` });
     onClose();
   };
@@ -1098,9 +957,10 @@ function NuevoAfiliadoModal({ open, onClose, crearAfiliado, addNotification }) {
     setDependientes(0);
   };
 
-  const crear = () => {
+  const crear = async () => {
     if (!nombre || !cedula || !plan) return;
-    const nuevo = crearAfiliado({ nombre, cedula, plan, estado, desde, nacimiento, telefono, correo, dependientes });
+    const nuevo = await crearAfiliado({ nombre, cedula, plan, estado, desde, nacimiento, telefono, correo, dependientes });
+    if (!nuevo) return;
     onClose?.();
     setTimeout(() => {
       addNotification({ type: 'success', title: 'Afiliado creado', message: `${nuevo.nombre} agregado con ID ${nuevo.id}.` });
@@ -1238,7 +1098,7 @@ function AutorizacionesTab({ autorizaciones, afiliados, proveedores, aprobarAut,
         </div>
       </Card>
 
-      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
+      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
     </motion.div>
   );
 }
@@ -1345,7 +1205,7 @@ function RegistrarReclamoModal({ open, onClose, afiliados, proveedores, onRegist
   const [monto, setMonto] = useState(500);
 
   const submit = () => {
-    onRegistrar({ afiliadoId: Number(afiliadoId), proveedorId: Number(proveedorId), monto: Number(monto) });
+    onRegistrar({ afiliadoId, proveedorId, monto: Number(monto) });
     onClose?.();
     addNotification({
       type: "success",
@@ -1465,8 +1325,8 @@ function ProveedoresTab({ proveedores }) {
     return proveedores.filter(p => (ciudad === "Todas" || p.ciudad === ciudad) && (tipo === "Todos" || p.tipo === tipo));
   }, [proveedores, ciudad, tipo]);
 
-  const ciudades = useMemo(() => ["Todas", ...Array.from(new Set(proveedores.map(p=>p.ciudad)))], [proveedores]);
-  const tipos = useMemo(() => ["Todos", ...Array.from(new Set(proveedores.map(p=>p.tipo)))], [proveedores]);
+  const ciudades = useMemo(() => ["Todas", ...Array.from(new Set<string>(proveedores.map(p=>p.ciudad)))], [proveedores]);
+  const tipos = useMemo(() => ["Todos", ...Array.from(new Set<string>(proveedores.map(p=>p.tipo)))], [proveedores]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>
@@ -1506,7 +1366,7 @@ function ServiciosTab({ servicios, afiliados, proveedores, autorizaciones, onReg
 
   const serviciosFiltrados = useMemo(() => {
     return servicios.filter(s => {
-      if (filtroProveedor !== "todos" && s.proveedorId !== Number(filtroProveedor)) return false;
+      if (filtroProveedor !== "todos" && String(s.proveedorId) !== String(filtroProveedor)) return false;
       if (filtroEstado !== "todos" && s.estado !== filtroEstado) return false;
       return true;
     });
@@ -1602,8 +1462,9 @@ function RegistrarServicioModal({ open, onClose, afiliados, proveedores, autoriz
     return autorizaciones.filter(a => String(a.afiliadoId) === afiliadoId && a.estado === 'Aprobada');
   }, [autorizaciones, afiliadoId]);
 
-  const registrar = () => {
-    const nuevo = onRegistrar({ afiliadoId, proveedorId, descripcion, costo, autorizacionId: autorizacionId || undefined });
+  const registrar = async () => {
+    const nuevo = await onRegistrar({ afiliadoId, proveedorId, descripcion, costo, autorizacionId: autorizacionId || undefined });
+    if (!nuevo) return;
     addNotification({ id: Date.now(), type: 'success', title: 'Servicio registrado', message: `Se registró servicio para afiliado ${afiliados.find(a=>String(a.id)===afiliadoId)?.nombre}.` });
     onClose();
     return nuevo;
@@ -1654,7 +1515,7 @@ function PagosTab({ servicios, pagos, proveedores, onEmitirPago, addNotification
   const [filtroProveedor, setFiltroProveedor] = useState("todos");
 
   const pagosFiltrados = useMemo(() => {
-    return pagos.filter(p => filtroProveedor === "todos" || p.proveedorId === Number(filtroProveedor));
+    return pagos.filter(p => filtroProveedor === "todos" || String(p.proveedorId) === String(filtroProveedor));
   }, [pagos, filtroProveedor]);
 
   const exportar = () => {
@@ -1735,8 +1596,8 @@ function EmitirPagoModal({ open, onClose, servicios, proveedores, onEmitirPago, 
     setReferenciaBanco(s ? `ORD-${new Date().getFullYear()}-${String(s.id).padStart(4,'0')}` : "");
   }, [servicioId]);
 
-  const emitir = () => {
-    const pago = onEmitirPago({ servicioId, monto, referenciaBanco, metodo });
+  const emitir = async () => {
+    const pago = await onEmitirPago({ servicioId, monto, referenciaBanco, metodo });
     if (pago) {
       addNotification({ id: Date.now(), type: 'success', title: 'Pago emitido', message: `Se emitió pago a ${proveedorSel?.nombre} por ${currency(monto)}.` });
       onClose();
@@ -1788,7 +1649,7 @@ function FacturacionTab({ facturas, polizas, onGenerarMes, onRecordatorio, onReg
   const [openPago, setOpenPago] = useState(false);
   const [facturaSel, setFacturaSel] = useState(null);
 
-  const periodos = useMemo(() => Array.from(new Set(facturas.map(f => f.periodo))), [facturas]);
+  const periodos = useMemo(() => Array.from(new Set<string>(facturas.map(f => f.periodo))), [facturas]);
 
   const facturasFiltradas = useMemo(() => {
     return facturas.filter(f => {
@@ -1888,8 +1749,8 @@ function FacturacionTab({ facturas, polizas, onGenerarMes, onRecordatorio, onReg
 function RegistrarPagoPrimaModal({ open, onClose, factura, onRegistrarPago }) {
   const [referencia, setReferencia] = useState('');
   if (!factura) return null;
-  const submit = () => {
-    onRegistrarPago({ facturaId: factura.id, referencia });
+  const submit = async () => {
+    await onRegistrarPago({ facturaId: factura.id, referencia });
     onClose();
   };
   return (

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Rol } from '@prisma/client';
 const prisma = new PrismaClient();
 const plans = [
   { id: 'BASICO', nombre: 'Plan Básico de Salud', copagoConsulta: 200, cobertura: { consultas: true, laboratorio: true, emergencias: true, hospitalizacion: true, odontologia: false, saludMental: false } },
@@ -8,7 +8,12 @@ const plans = [
 ];
 async function main() {
   const hash = await bcrypt.hash('admin123', 12);
-  for (const [usuario, nombre, rol, password] of [['admin','Administrador','ADMINISTRADOR','admin123'], ['agente','Agente ARS','AGENTE','agente123'], ['supervisor','Supervisor','SUPERVISOR','super123']]) await prisma.usuario.upsert({ where: { usuario }, update: {}, create: { usuario, nombre, rol, passwordHash: await bcrypt.hash(password, 12) } });
+  const users = [
+    { usuario: 'admin', nombre: 'Administrador', rol: Rol.ADMINISTRADOR, password: 'admin123' },
+    { usuario: 'agente', nombre: 'Agente ARS', rol: Rol.AGENTE, password: 'agente123' },
+    { usuario: 'supervisor', nombre: 'Supervisor', rol: Rol.SUPERVISOR, password: 'super123' },
+  ] as const;
+  for (const user of users) await prisma.usuario.upsert({ where: { usuario: user.usuario }, update: {}, create: { usuario: user.usuario, nombre: user.nombre, rol: user.rol, passwordHash: await bcrypt.hash(user.password, 12) } });
   for (const plan of plans) await prisma.plan.upsert({ where: { id: plan.id }, update: plan, create: plan });
   const providers = [{ nombre: 'Hospital General Plaza de la Salud', tipo: 'Hospital', ciudad: 'Santo Domingo', telefono: '+1 809 555 0001' }, { nombre: 'CEDIMAT', tipo: 'Imagenología', ciudad: 'Santo Domingo', telefono: '+1 809 555 0002' }, { nombre: 'Laboratorio Referencia', tipo: 'Laboratorio', ciudad: 'Santo Domingo', telefono: '+1 809 555 0003' }];
   for (const provider of providers) { const found = await prisma.proveedor.findFirst({ where: { nombre: provider.nombre } }); if (!found) await prisma.proveedor.create({ data: provider }); }

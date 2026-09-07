@@ -2,6 +2,22 @@
 
 Sistema de gestión para una Administradora de Riesgos de Salud (ARS). El proyecto es una aplicación web full-stack moderna construida utilizando **TypeScript** tanto en el backend como en el frontend. El backend está compuesto por una API REST MVC con Express, PostgreSQL y Prisma, y el frontend por un cliente SPA estructurado con React, Vite y Tailwind CSS.
 
+## Índice
+
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Requisitos Previos](#requisitos-previos)
+- [Guía de Instalación y Ejecución](#guía-de-instalación-y-ejecución-desde-github)
+- [Configuración de la Base de Datos](#2-configurar-la-base-de-datos-postgresql)
+- [Configuración del Backend](#3-configuración-y-ejecución-del-backend-typescript)
+- [Configuración del Frontend](#4-configuración-y-ejecución-del-frontend-react-typescript)
+- [Comandos Útiles](#desarrollo-y-comandos-útiles)
+- [Solución de Problemas](#solución-a-posibles-errores-comunes)
+- [Documentación Adicional](#documentación-adicional)
+
+## Antes de comenzar
+
+El proyecto se ejecuta con dos procesos independientes: PostgreSQL y el backend, más el servidor Vite del frontend. Para desarrollo local necesitas dos terminales abiertas. Las rutas de los comandos deben ejecutarse desde la carpeta que contiene `FrontEnd` y `backend`.
+
 ---
 
 ## Estructura del Proyecto
@@ -65,11 +81,11 @@ Tienes dos alternativas para preparar tu base de datos:
 
 #### Opción B: Usando Prisma ORM (Recomendado)
 1. Primero configura el archivo `.env` del backend (ver paso 3).
-2. Luego, ejecuta las migraciones y el seeding de Prisma:
+2. El repositorio actual no contiene una carpeta de migraciones Prisma. Usa `db push` para crear las tablas desde `backend/prisma/schema.prisma`:
    ```bash
    cd backend
    npm run prisma:generate
-   npm run prisma:migrate
+   npx prisma db push
    npm run prisma:seed
    ```
 
@@ -131,7 +147,12 @@ El frontend utiliza **React + TypeScript** compilado de forma ultrarrápida a tr
    ```bash
    npm install
    ```
-3. Arranca el servidor de desarrollo de Vite:
+3. Opcionalmente crea el archivo `.env` desde `.env.example` si necesitas configurar la URL de la API:
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+   Para desarrollo local debe contener `VITE_API_URL=http://localhost:4000/api`.
+4. Arranca el servidor de desarrollo de Vite:
    ```bash
    npm run dev
    ```
@@ -183,9 +204,23 @@ Tanto la API como la interfaz cuentan con soporte completo para comprobación de
 * **Causa**: El backend está rechazando las solicitudes provenientes del dominio/puerto del frontend.
 * **Solución**: El backend tiene preconfigurado CORS, pero asegúrate de que la API de desarrollo corre en el puerto `4000` y el cliente en el puerto `5173`, que son los predeterminados. Si cambias de puerto, recuerda actualizar la configuración CORS en `backend/src/app.ts`.
 
-### 5. `node_modules` corrupto o errores extraños de instalación
+### 5. La interfaz aparece sin estilos
+* **Causa**: Tailwind no encontró las clases usadas en los archivos TypeScript/TSX o Vite está sirviendo un resultado anterior.
+* **Solución**: confirma que `FrontEnd/tailwind.config.js` incluya `js,jsx,ts,tsx`, detén y reinicia Vite desde `FrontEnd`, y fuerza una recarga con `Ctrl+F5`.
+   ```powershell
+   cd FrontEnd
+   npm run dev
+   ```
+
+### 6. `node_modules` corrupto o errores extraños de instalación
 * **Causa**: Una instalación interrumpida de npm o dependencias cacheadas conflictivas.
 * **Solución**: Limpia y reinstala las dependencias en la carpeta afectada (ya sea `backend/` o `FrontEnd/`):
   - Elimina la carpeta `node_modules` y el archivo `package-lock.json`.
   - Vuelve a ejecutar `npm install`.
+
+## Documentación adicional
+
+- [Documentación del backend](backend/README.md)
+- [Diagramas UML](docs/DIAGRAMAS_UML.md)
+- [Guion de presentación](GUION_PRESENTACION.md)
 
