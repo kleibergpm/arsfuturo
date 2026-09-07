@@ -178,6 +178,16 @@ Tanto la API como la interfaz cuentan con soporte completo para comprobación de
 
 ---
 
+## Orden de Ejecución
+
+El orden recomendado es:
+
+1. Iniciar PostgreSQL.
+2.Ejecutar el backend con `npm run dev`.
+3. Ejecutar el frontend con `npm run dev`.
+4. Iniciar sesión en la aplicación.
+
+
 ## Solución a Posibles Errores Comunes
 
 ### 1. Error: `P1001: Can't reach database server...`
