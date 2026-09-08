@@ -55,89 +55,11 @@ import {
   adaptServicio,
   adaptUser,
 } from "./api/adapters";
-import { PLANES, canAuthorize, getPlanById } from "./data/plans";
+import { canAuthorize, getPlanById } from "./data/plans";
 import { Badge, Button, Card, Divider, Input, Modal, NotificationContainer, Select, cls } from "./components/ui";
 
 const currency = (n) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
 const formatDate = (d) => new Intl.DateTimeFormat("es-DO").format(new Date(d));
-const proveedoresSeed = [
-  { id: 1, nombre: "Hospital General Plaza de la Salud", tipo: "Hospital", ciudad: "Santo Domingo", telefono: "+1 809 555 0001" },
-  { id: 2, nombre: "CEDIMAT", tipo: "Imagenologia", ciudad: "Santo Domingo", telefono: "+1 809 555 0002" },
-  { id: 3, nombre: "Laboratorio Referencia", tipo: "Laboratorio", ciudad: "Santo Domingo", telefono: "+1 809 555 0003" },
-  { id: 4, nombre: "Laboratorio Amadita", tipo: "Laboratorio", ciudad: "Santo Domingo", telefono: "+1 809 555 0004" },
-  { id: 5, nombre: "Hospital Metropolitano de Santiago (HOMS)", tipo: "Hospital", ciudad: "Santiago", telefono: "+1 809 555 0005" },
-  { id: 6, nombre: "Clinica Union Medica", tipo: "Clinica", ciudad: "Santiago", telefono: "+1 809 555 0006" },
-  { id: 7, nombre: "Clinica Abreu", tipo: "Clinica", ciudad: "Santo Domingo", telefono: "+1 809 555 0007" },
-  { id: 8, nombre: "Centro Medico UCE", tipo: "Clinica", ciudad: "Santo Domingo", telefono: "+1 809 555 0008" },
-  { id: 9, nombre: "Laboratorio Patria Rivas", tipo: "Laboratorio", ciudad: "Santo Domingo", telefono: "+1 809 555 0009" },
-  { id: 10, nombre: "Centro Medico Bournigal", tipo: "Clinica", ciudad: "Puerto Plata", telefono: "+1 809 555 0010" },
-  { id: 11, nombre: "Hospital Traumatologico Ney Arias Lora", tipo: "Hospital", ciudad: "Santo Domingo", telefono: "+1 809 555 0011" },
-  { id: 12, nombre: "IMG Centro de Diagnostico", tipo: "Imagenologia", ciudad: "Santo Domingo", telefono: "+1 809 555 0012" },
-];
-
-const afiliadosSeed = [
-  { id: 101, nombre: "María Gonzalo Padilla", cedula: "001-1234567-8", plan: "PLUS", estado: "Activo", desde: "2023-05-10", nacimiento: "1991-09-14", telefono: "+1 809 555 1111", correo: "maria.padilla@demo.do", dependientes: 1 },
-  { id: 102, nombre: "Ricardo Balbuena", cedula: "001-9876543-2", plan: "PREMIUM", estado: "Activo", desde: "2022-11-01", nacimiento: "1990-03-22", telefono: "+1 829 647 1044", correo: "ricardo@cosevi.do", dependientes: 2 },
-  { id: 103, nombre: "Juan Patiño Cáceres", cedula: "001-2345678-9", plan: "BASICO", estado: "Activo", desde: "2024-01-15", nacimiento: "1988-07-05", telefono: "+1 809 555 2222", correo: "juan.pc@demo.do", dependientes: 0 },
-  { id: 104, nombre: "Gia Fernández", cedula: "001-7654321-0", plan: "PLUS", estado: "Suspendido", desde: "2023-02-01", nacimiento: "1995-04-10", telefono: "+1 809 555 3333", correo: "gia@demo.do", dependientes: 3 },
-];
-
-const autorizacionesSeed = [
-  { id: 5001, afiliadoId: 101, procedimiento: "Consulta general", proveedorId: 1, estado: "Aprobada", fecha: "2025-01-10", copago: 100 },
-  { id: 5002, afiliadoId: 102, procedimiento: "Rayos X de tórax", proveedorId: 5, estado: "Pendiente", fecha: "2025-01-15", copago: 0 },
-  { id: 5003, afiliadoId: 103, procedimiento: "Perfil lipídico", proveedorId: 2, estado: "Rechazada", fecha: "2025-01-19", copago: 0 },
-  { id: 5004, afiliadoId: 101, procedimiento: "Consulta cardiología", proveedorId: 7, estado: "Aprobada", fecha: "2025-01-19", copago: 50 },
-  { id: 5005, afiliadoId: 102, procedimiento: "Resonancia magnética", proveedorId: 2, estado: "Aprobada", fecha: "2025-01-18", copago: 0 },
-  { id: 5006, afiliadoId: 104, procedimiento: "Consulta general", proveedorId: 8, estado: "Pendiente", fecha: "2025-01-17", copago: 100 },
-  { id: 5007, afiliadoId: 103, procedimiento: "Laboratorio completo", proveedorId: 3, estado: "Aprobada", fecha: "2025-01-16", copago: 0 },
-  { id: 5008, afiliadoId: 101, procedimiento: "Consulta oftalmología", proveedorId: 6, estado: "Rechazada", fecha: "2025-01-14", copago: 100 },
-  { id: 5009, afiliadoId: 102, procedimiento: "Tomografía", proveedorId: 12, estado: "Aprobada", fecha: "2025-01-12", copago: 0 },
-  { id: 5010, afiliadoId: 104, procedimiento: "Consulta dermatología", proveedorId: 7, estado: "Pendiente", fecha: "2025-01-11", copago: 100 },
-];
-
-const reclamacionesSeed = [
-  { id: 7001, afiliadoId: 101, proveedorId: 1, monto: 1500, estado: "En revisión", fecha: "2025-01-05" },
-  { id: 7002, afiliadoId: 102, proveedorId: 5, monto: 2800, estado: "Aprobada", fecha: "2024-12-28" },
-  { id: 7003, afiliadoId: 103, proveedorId: 2, monto: 950, estado: "Rechazada", fecha: "2024-12-12" },
-  { id: 7004, afiliadoId: 101, proveedorId: 7, monto: 3200, estado: "Aprobada", fecha: "2024-12-15" },
-  { id: 7005, afiliadoId: 104, proveedorId: 8, monto: 1800, estado: "En revisión", fecha: "2025-01-03" },
-  { id: 7006, afiliadoId: 102, proveedorId: 2, monto: 4500, estado: "Aprobada", fecha: "2024-11-22" },
-  { id: 7007, afiliadoId: 103, proveedorId: 3, monto: 1200, estado: "Aprobada", fecha: "2024-11-18" },
-  { id: 7008, afiliadoId: 101, proveedorId: 6, monto: 2100, estado: "Rechazada", fecha: "2024-11-10" },
-  { id: 7009, afiliadoId: 104, proveedorId: 12, monto: 5200, estado: "Aprobada", fecha: "2024-10-25" },
-  { id: 7010, afiliadoId: 102, proveedorId: 1, monto: 1650, estado: "En revisión", fecha: "2025-01-08" },
-];
-
-const polizasSeed = [
-  { id: "P-001", empresa: "COSEVI, S.R.L.", plan: "PREMIUM", desde: "2022-11-01", hasta: "2026-10-31", primaMensual: 185000, asegurados: 52, estado: "Vigente" },
-  { id: "P-002", empresa: "DINAFA, S.A.", plan: "PLUS", desde: "2023-01-01", hasta: "2026-12-31", primaMensual: 99000, asegurados: 31, estado: "Vigente" },
-  { id: "P-003", empresa: "COMINTER, S.R.L.", plan: "BASICO", desde: "2024-02-01", hasta: "2025-12-31", primaMensual: 48000, asegurados: 14, estado: "Vigente" },
-];
-
-// Facturación de pólizas: facturas de prima mensual
-const facturasSeed = [
-  { id: 3001, polizaId: "P-001", periodo: "2024-12", emision: "2024-12-01", vencimiento: "2024-12-10", monto: 185000, estado: "Pagada", fechaPago: "2024-12-08", referencia: "PR-2024-1208-0001", recordatorioEnviado: false },
-  { id: 3002, polizaId: "P-002", periodo: "2025-01", emision: "2025-01-01", vencimiento: "2025-01-10", monto: 99000, estado: "Pendiente", fechaPago: null, referencia: null, recordatorioEnviado: false },
-  { id: 3003, polizaId: "P-003", periodo: "2025-01", emision: "2025-01-01", vencimiento: "2025-01-10", monto: 48000, estado: "Atrasada", fechaPago: null, referencia: null, recordatorioEnviado: true },
-];
-
-// Nuevos módulos según diagramas: Servicios Médicos y Pagos a Proveedores
-const serviciosSeed = [
-  { id: 9001, afiliadoId: 101, proveedorId: 1, descripcion: "Consulta general", costo: 1200, fecha: "2025-01-12", estado: "Pendiente de Pago", autorizacionId: 5001, copago: 100 },
-  { id: 9002, afiliadoId: 103, proveedorId: 3, descripcion: "Laboratorio completo", costo: 950, fecha: "2024-12-12", estado: "Pagado", autorizacionId: 5007, copago: 0 },
-];
-
-const pagosSeed = [
-  { id: 8001, proveedorId: 3, servicioId: 9002, referenciaBanco: "ORD-2025-0001", monto: 950, fecha: "2024-12-13", estado: "Procesado", metodo: "Transferencia" },
-];
-
-// Usuarios de demostración para el login
-const usuariosDemo = [
-  { id: 1, usuario: "admin", password: "admin123", nombre: "Administrador", rol: "Administrador" },
-  { id: 2, usuario: "agente", password: "agente123", nombre: "Agente ARS", rol: "Agente" },
-  { id: 3, usuario: "supervisor", password: "super123", nombre: "Supervisor", rol: "Supervisor" },
-];
-
 function exportCsv(filename, rows) {
   const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -160,14 +82,15 @@ export default function ARS_Futuro_App() {
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const [afiliados, setAfiliados] = useState(afiliadosSeed);
-  const [autorizaciones, setAutorizaciones] = useState(autorizacionesSeed);
-  const [reclamaciones, setReclamaciones] = useState(reclamacionesSeed);
-  const [proveedores, setProveedores] = useState(proveedoresSeed);
-  const [polizas, setPolizas] = useState(polizasSeed);
-  const [servicios, setServicios] = useState(serviciosSeed);
-  const [pagos, setPagos] = useState(pagosSeed);
-  const [facturas, setFacturas] = useState(facturasSeed);
+  const [planes, setPlanes] = useState([]);
+  const [afiliados, setAfiliados] = useState([]);
+  const [autorizaciones, setAutorizaciones] = useState([]);
+  const [reclamaciones, setReclamaciones] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
+  const [polizas, setPolizas] = useState([]);
+  const [servicios, setServicios] = useState([]);
+  const [pagos, setPagos] = useState([]);
+  const [facturas, setFacturas] = useState([]);
 
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
@@ -194,7 +117,7 @@ export default function ARS_Futuro_App() {
     setLoading(true);
     const isAdmin = currentUser?.rol === "Administrador";
     Promise.all([
-      isAdmin ? resourcesApi.planes() : Promise.resolve([]),
+      resourcesApi.planes(),
       resourcesApi.afiliados(),
       resourcesApi.autorizaciones(),
       resourcesApi.reclamos(),
@@ -204,7 +127,7 @@ export default function ARS_Futuro_App() {
       isAdmin ? resourcesApi.pagos() : Promise.resolve([]),
       isAdmin ? resourcesApi.facturas() : Promise.resolve([]),
     ]).then(([planes, afiliadosData, autorizacionesData, reclamosData, proveedoresData, polizasData, serviciosData, pagosData, facturasData]) => {
-      if (planes.length) PLANES.splice(0, PLANES.length, ...adaptCollection(planes, adaptPlan));
+      setPlanes(adaptCollection(planes, adaptPlan));
       setAfiliados(adaptCollection(afiliadosData, adaptAfiliado));
       setAutorizaciones(adaptCollection(autorizacionesData, adaptAutorizacion));
       setReclamaciones(adaptCollection(reclamosData, adaptReclamo));
@@ -250,13 +173,9 @@ export default function ARS_Futuro_App() {
       
       const montoTotal = reclamacionesMes.reduce((sum, r) => sum + r.monto, 0);
       
-      // Si no hay datos reales, generar datos simulados basados en el patrón de afiliados
-      const montoFinal = montoTotal > 0 ? montoTotal : 
-        Math.floor(Math.random() * 30000) + (afiliados.length * 800) + 15000;
-      
       meses.push({
         mes: nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1),
-        monto: montoFinal
+        monto: montoTotal
       });
     }
     
@@ -264,21 +183,19 @@ export default function ARS_Futuro_App() {
   }, [reclamaciones, afiliados]);
 
   const chartAprob = useMemo(() => {
-    const porPlan = PLANES.map((p) => {
+    const porPlan = planes.map((p) => {
       const autosPlan = autorizaciones.filter((a) => (afiliados.find((x) => x.id === a.afiliadoId)?.plan) === p.id);
       const total = autosPlan.length;
       
       if (total === 0) {
-        // Si no hay autorizaciones para este plan, usar una tasa simulada realista
-        const tasaBase = p.id === 'PREMIUM' ? 85 : p.id === 'PLUS' ? 75 : 65;
-        return { plan: p.id, tasa: tasaBase + Math.floor(Math.random() * 10) };
+        return { plan: p.id, tasa: 0 };
       }
       
       const aprob = autosPlan.filter((x) => x.estado === "Aprobada").length;
       return { plan: p.id, tasa: Math.round((aprob / total) * 100) };
     });
     return porPlan;
-  }, [autorizaciones, afiliados]);
+  }, [autorizaciones, afiliados, planes]);
 
   const aprobarAut = async (id) => {
     // Solo administradores y supervisores pueden aprobar autorizaciones
@@ -403,15 +320,16 @@ export default function ARS_Futuro_App() {
     addNotification({ id: Date.now(), type: 'error', title: 'Póliza suspendida', message: `Se suspendió la póliza ${factura.polizaId} por falta de pago.` });
   };
 
-  const resetDemo = () => {
-    setAfiliados(afiliadosSeed);
-    setAutorizaciones(autorizacionesSeed);
-    setReclamaciones(reclamacionesSeed);
-    setProveedores(proveedoresSeed);
-    setPolizas(polizasSeed);
-    setServicios(serviciosSeed);
-    setPagos(pagosSeed);
-    setFacturas(facturasSeed);
+  const clearSessionData = () => {
+    setPlanes([]);
+    setAfiliados([]);
+    setAutorizaciones([]);
+    setReclamaciones([]);
+    setProveedores([]);
+    setPolizas([]);
+    setServicios([]);
+    setPagos([]);
+    setFacturas([]);
   };
 
   // Funciones de autenticación
@@ -445,7 +363,7 @@ export default function ARS_Futuro_App() {
     setRole("Agente");
     setTab("dashboard");
     // Resetear datos al cerrar sesión
-    resetDemo();
+    clearSessionData();
   };
 
   // Funciones para manejar notificaciones
@@ -711,7 +629,7 @@ export default function ARS_Futuro_App() {
                       </Button>
                     </div>
                   </div>
-                  <NuevoAfiliadoModal open={openNuevoAfiliado} onClose={() => setOpenNuevoAfiliado(false)} crearAfiliado={crearAfiliado} addNotification={addNotification} />
+                  <NuevoAfiliadoModal open={openNuevoAfiliado} onClose={() => setOpenNuevoAfiliado(false)} planes={planes} crearAfiliado={crearAfiliado} addNotification={addNotification} />
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm min-w-[800px]">
                       <thead>
@@ -730,7 +648,7 @@ export default function ARS_Futuro_App() {
                           <tr key={a.id} className="border-b last:border-0">
                             <td className="py-2 pr-2 font-medium">{a.nombre}</td>
                             <td className="py-2 pr-2">{a.cedula}</td>
-                            <td className="py-2 pr-2">{getPlanById(a.plan).nombre}</td>
+                            <td className="py-2 pr-2">{getPlanById(planes, a.plan).nombre}</td>
                             <td className="py-2 pr-2">
                               <Badge color={a.estado === "Activo" ? "green" : "amber"}>{a.estado}</Badge>
                             </td>
@@ -742,7 +660,7 @@ export default function ARS_Futuro_App() {
                               </div>
                             </td>
                             <td className="py-2 pr-2">
-                              <AfiliadoActions afiliado={a} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} onEditarAfiliado={actualizarAfiliado} />
+                              <AfiliadoActions afiliado={a} afiliados={afiliados} proveedores={proveedores} planes={planes} crearAutorizacion={crearAutorizacion} addNotification={addNotification} onEditarAfiliado={actualizarAfiliado} />
                             </td>
                           </tr>
                         ))}
@@ -754,7 +672,7 @@ export default function ARS_Futuro_App() {
             )}
 
             {tab === "autoriz" && (
-              <AutorizacionesTab key="autoriz" autorizaciones={autorizaciones} afiliados={afiliados} proveedores={proveedores} aprobarAut={aprobarAut} rechazarAut={rechazarAut} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
+              <AutorizacionesTab key="autoriz" autorizaciones={autorizaciones} afiliados={afiliados} proveedores={proveedores} planes={planes} aprobarAut={aprobarAut} rechazarAut={rechazarAut} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
             )}
 
             {tab === "reclamos" && (
@@ -766,7 +684,7 @@ export default function ARS_Futuro_App() {
             )}
 
             {tab === "polizas" && (
-              <PolizasTab key="polizas" polizas={polizas} />
+              <PolizasTab key="polizas" polizas={polizas} planes={planes} />
             )}
 
             {tab === "proveed" && (
@@ -807,7 +725,7 @@ export default function ARS_Futuro_App() {
   );
 }
 
-function AfiliadoActions({ afiliado, afiliados, proveedores, crearAutorizacion, addNotification, onEditarAfiliado }) {
+function AfiliadoActions({ afiliado, afiliados, proveedores, planes, crearAutorizacion, addNotification, onEditarAfiliado }) {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   return (
@@ -818,13 +736,13 @@ function AfiliadoActions({ afiliado, afiliados, proveedores, crearAutorizacion, 
       <Button variant="ghost" size="sm" className="flex items-center justify-center" onClick={() => setOpenEdit(true)}>
         <User className="w-4 h-4 mr-1"/> Editar
       </Button>
-      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliadoDefault={afiliado} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
+      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliadoDefault={afiliado} afiliados={afiliados} proveedores={proveedores} planes={planes} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
       <EditarAfiliadoModal open={openEdit} onClose={() => setOpenEdit(false)} afiliado={afiliado} onGuardar={onEditarAfiliado} addNotification={addNotification} />
     </div>
   );
 }
 
-function NuevaAutorizacionModal({ open, onClose, afiliadoDefault = null, afiliados = [], proveedores = [], crearAutorizacion, addNotification }) {
+function NuevaAutorizacionModal({ open, onClose, afiliadoDefault = null, afiliados = [], proveedores = [], planes = [], crearAutorizacion, addNotification }) {
   const [afiliadoId, setAfiliadoId] = useState(afiliadoDefault?.id ? String(afiliadoDefault.id) : "");
   const [proveedorId, setProveedorId] = useState(proveedores[0]?.id ? String(proveedores[0].id) : "");
   const [procedimiento, setProcedimiento] = useState("Consulta general");
@@ -840,7 +758,7 @@ function NuevaAutorizacionModal({ open, onClose, afiliadoDefault = null, afiliad
   const validar = () => {
     const af = afiliadosAll.find((a) => String(a.id) === String(afiliadoId));
     if (!af) return setValid(null);
-    setValid(canAuthorize(af, procedimiento));
+    setValid(canAuthorize(planes, af, procedimiento));
   };
 
   const crear = async () => {
@@ -934,7 +852,7 @@ function EditarAfiliadoModal({ open, onClose, afiliado, onGuardar, addNotificati
   );
 }
 
-function NuevoAfiliadoModal({ open, onClose, crearAfiliado, addNotification }) {
+function NuevoAfiliadoModal({ open, onClose, planes = [], crearAfiliado, addNotification }) {
   const [nombre, setNombre] = useState("");
   const [cedula, setCedula] = useState("");
   const [plan, setPlan] = useState("BASICO");
@@ -982,7 +900,7 @@ function NuevoAfiliadoModal({ open, onClose, crearAfiliado, addNotification }) {
         <div>
           <label className="text-xs text-slate-600">Plan</label>
           <Select value={plan} onChange={setPlan}>
-            {PLANES.map(p => (
+            {planes.map(p => (
               <option key={p.id} value={p.id}>{p.nombre}</option>
             ))}
           </Select>
@@ -1024,7 +942,7 @@ function NuevoAfiliadoModal({ open, onClose, crearAfiliado, addNotification }) {
   );
 }
 
-function AutorizacionesTab({ autorizaciones, afiliados, proveedores, aprobarAut, rechazarAut, crearAutorizacion, addNotification }) {
+function AutorizacionesTab({ autorizaciones, afiliados, proveedores, planes, aprobarAut, rechazarAut, crearAutorizacion, addNotification }) {
   const [estado, setEstado] = useState("Todos");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -1098,7 +1016,7 @@ function AutorizacionesTab({ autorizaciones, afiliados, proveedores, aprobarAut,
         </div>
       </Card>
 
-      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
+      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliados={afiliados} proveedores={proveedores} planes={planes} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
     </motion.div>
   );
 }
@@ -1235,7 +1153,7 @@ function RegistrarReclamoModal({ open, onClose, afiliados, proveedores, onRegist
         </div>
         <div>
           <label className="text-xs text-slate-600">Monto</label>
-          <Input type="number" value={monto} onChange={setMonto} />
+          <Input type="number" value={monto} onChange={(value) => setMonto(Number(value) || 0)} />
         </div>
       </div>
       <div className="mt-4 flex justify-end gap-2">
@@ -1246,7 +1164,7 @@ function RegistrarReclamoModal({ open, onClose, afiliados, proveedores, onRegist
   );
 }
 
-function PolizasTab({ polizas }) {
+function PolizasTab({ polizas, planes }) {
   const [personas, setPersonas] = useState(50);
   const [plan, setPlan] = useState("PLUS");
 
@@ -1298,7 +1216,7 @@ function PolizasTab({ polizas }) {
             <div>
               <label className="text-xs text-slate-600">Plan</label>
               <Select value={plan} onChange={setPlan}>
-                {PLANES.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                {planes.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               </Select>
             </div>
             <div>
