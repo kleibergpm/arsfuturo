@@ -713,8 +713,8 @@ export default function ARS_Futuro_App() {
             <span className="font-medium">ARS Futuro — Demo</span>
           </div>
           <div className="flex items-center gap-3">
-            <span>Grupo 4 Ing. Software I</span>
-            <span>© 2025</span>
+            <span>Grupo 4 Ing. Software II</span>
+            <span>© 2026</span>
           </div>
         </div>
       </footer>
