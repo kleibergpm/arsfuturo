@@ -216,13 +216,26 @@ El orden recomendado es:
 
 ### 5. La interfaz aparece sin estilos
 * **Causa**: Tailwind no encontró las clases usadas en los archivos TypeScript/TSX o Vite está sirviendo un resultado anterior.
-* **Solución**: confirma que `FrontEnd/tailwind.config.js` incluya `js,jsx,ts,tsx`, detén y reinicia Vite desde `FrontEnd`, y fuerza una recarga con `Ctrl+F5`.
+* **Solución**: confirma que `FrontEnd/tailwind.config.ts` incluya `js,jsx,ts,tsx`, detén y reinicia Vite desde `FrontEnd`, y fuerza una recarga con `Ctrl+F5`.
    ```powershell
    cd FrontEnd
    npm run dev
    ```
 
-### 6. `node_modules` corrupto o errores extraños de instalación
+### 6. Migración a TypeScript del frontend
+
+El frontend utiliza archivos `.ts` y `.tsx` para código, componentes y configuración. No necesitas instalar un compilador global ni `ts-node`: Vite y TypeScript se instalan localmente con `npm install`.
+
+Después de clonar o actualizar el proyecto, ejecuta:
+
+```powershell
+cd FrontEnd
+npm install
+npx tsc --noEmit
+npm run build
+```
+
+### 7. `node_modules` corrupto o errores extraños de instalación
 * **Causa**: Una instalación interrumpida de npm o dependencias cacheadas conflictivas.
 * **Solución**: Limpia y reinstala las dependencias en la carpeta afectada (ya sea `backend/` o `FrontEnd/`):
   - Elimina la carpeta `node_modules` y el archivo `package-lock.json`.
