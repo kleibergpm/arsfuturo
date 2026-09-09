@@ -1,4 +1,4 @@
-# ARS Futuro (INGENIERA DE SOFTWARE II - GRUPO 4) - Modificacion de Kleiber
+# ARS Futuro (INGENIERA DE SOFTWARE II - GRUPO 4) 
 
 Sistema de gestión para una Administradora de Riesgos de Salud (ARS). El proyecto es una aplicación web full-stack moderna construida utilizando **TypeScript** tanto en el backend como en el frontend. El backend está compuesto por una API REST MVC con Express, PostgreSQL y Prisma, y el frontend por un cliente SPA estructurado con React, Vite y Tailwind CSS.
 
