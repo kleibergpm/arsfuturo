@@ -13,16 +13,21 @@
 
 # ARS Futuro
 
+**General:**
 ![Version](https://img.shields.io/badge/version-1.0.0-blue?logo=semantic-release&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+**FrontEnd:**
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
-![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+
+**BackEnd:**
+![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-v20+-brightgreen?logo=node.js&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
