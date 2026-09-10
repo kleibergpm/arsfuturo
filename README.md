@@ -2,6 +2,30 @@
 
 Proyecto full-stack para la gestión de una Administradora de Riesgos de Salud (ARS), con backend en Express + TypeScript + Prisma + PostgreSQL y frontend en React + Vite + Tailwind CSS.
 
+**Asignatura:** INF-5250 – Ingeniería de Software II
+
+**Semestre:** 2026-2
+
+**Profesor:** Amancio Lorenzo Lorenzo
+
+**Seccion:** Z01
+
+**Proyecto:** ARS Futuro
+
+**Grupo:** The code society
+
+---
+
+## 👥 Integrantes del equipo
+| Integrante                       | Matrícula | Rol |
+| -------------------------------- | --------: | --------: |
+| Anderson Antonio Castillo Peláez | 100631535 | Desarrollador Full-Stack |
+| Kleiber Gabriel Pérez Montero    | 100453725 | Desarrollador BackEnd / QA Engineer |
+| Eric Vladimir Tejada Nieve       |    FF1944 | Desarrollador FrontEnd |
+| Mayobanex Vicente Soto           | 100417556 | Desarrollador FrontEnd |
+
+---
+
 ## 📊 Estado del Proyecto
 
 [![Version](https://img.shields.io/github/v/release/kleibergpm/arsfuturo?logo=github&label=version)](https://github.com/kleibergpm/arsfuturo/releases)
