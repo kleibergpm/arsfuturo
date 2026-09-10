@@ -13,7 +13,18 @@
 
 # ARS Futuro
 
-Sistema de gestión para una Administradora de Riesgos de Salud (ARS). El proyecto es una aplicación web full-stack moderna construida utilizando **TypeScript** tanto en el backend como en el frontend. El backend está compuesto por una API REST MVC con Express, PostgreSQL y Prisma, y el frontend por un cliente SPA estructurado con React, Vite y Tailwind CSS.
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
+![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-v20+-brightgreen?logo=node.js&logoColor=white)
+
+---
+
+Sistema de gestión para una Administradora de Riesgos de Salud (ARS). El proyecto es una aplicación web full-stack moderna construida utilizando **TypeScript** tanto en el backend como en el frontend, con una arquitectura MVC robusta y escalable.
 
 ## Índice
 
@@ -29,7 +40,7 @@ Sistema de gestión para una Administradora de Riesgos de Salud (ARS). El proyec
 
 ## Antes de comenzar
 
-El proyecto se ejecuta con dos procesos independientes: PostgreSQL y el backend, más el servidor Vite del frontend. Para desarrollo local necesitas dos terminales abiertas. Las rutas de los comandos deben ejecutarse desde la carpeta que contiene `FrontEnd` y `backend`.
+El proyecto se ejecuta con dos procesos independientes: PostgreSQL y el backend, más el servidor Vite del frontend. Para desarrollo local necesitas dos terminales abiertas. Las rutas de los comandos están optimizadas para Windows PowerShell, pero incluyen notas para Linux/macOS.
 
 ---
 
@@ -225,7 +236,7 @@ El orden recomendado es:
 
 ### 4. Error: `CORS Policy Blocked...` al hacer peticiones HTTP
 * **Causa**: El backend está rechazando las solicitudes provenientes del dominio/puerto del frontend.
-* **Solución**: El backend tiene preconfigurado CORS, pero asegúrate de que la API de desarrollo corre en el puerto `4000` y el cliente en el puerto `5173`, que son los predeterminados. Si cambias de puerto, recuerda actualizar la configuración CORS en `backend/src/app.ts`.
+* **Solución**: El backend tiene preconfigurado CORS, pero asegúrate de que la API de desarrollo corre en el puerto `4000` y el cliente en el puerto `5173`, que son los predeterminados. Si cambias los puertos, actualiza la variable `CORS_ORIGIN` en el archivo `.env` del backend.
 
 ### 5. La interfaz aparece sin estilos
 * **Causa**: Tailwind no encontró las clases usadas en los archivos TypeScript/TSX o Vite está sirviendo un resultado anterior.
@@ -259,4 +270,3 @@ npm run build
 - [Documentación del backend](backend/README.md)
 - [Diagramas UML](docs/DIAGRAMAS_UML.md)
 - [Guion de presentación](GUION_PRESENTACION.md)
-
