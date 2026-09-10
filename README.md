@@ -1,4 +1,4 @@
-# ARS Futuro
+# ARS Futuro (INGENIERA DE SOFTWARE II - GRUPO 4)
 
 Proyecto full-stack para la gestión de una Administradora de Riesgos de Salud (ARS), con backend en Express + TypeScript + Prisma + PostgreSQL y frontend en React + Vite + Tailwind CSS.
 
