@@ -1,7 +1,28 @@
-**Asignatura:** INF-5250 – Ingeniería de Software II  
 **Proyecto:** ARS Futuro
 
 Proyecto full-stack para la gestión de una Administradora de Riesgos de Salud (ARS), con backend en Express + TypeScript + Prisma + PostgreSQL y frontend en React + Vite + Tailwind CSS.
+
+## 📊 Estado del Proyecto
+
+[![Version](https://img.shields.io/github/v/release/kleibergpm/arsfuturo?logo=github&label=version)](https://github.com/kleibergpm/arsfuturo/releases)
+[![Last Commit](https://img.shields.io/github/last-commit/kleibergpm/arsfuturo?logo=github)](https://github.com/kleibergpm/arsfuturo/commits)
+[![Issues](https://img.shields.io/github/issues/kleibergpm/arsfuturo?logo=github)](https://github.com/kleibergpm/arsfuturo/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/kleibergpm/arsfuturo?logo=github)](https://github.com/kleibergpm/arsfuturo/pulls)
+[![License](https://img.shields.io/github/license/kleibergpm/arsfuturo?logo=github)](https://github.com/kleibergpm/arsfuturo/blob/main/LICENSE)
+
+## 🛠️ Stack Tecnológico
+
+### FrontEnd
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+
+### BackEnd
+[![Node.js](https://img.shields.io/badge/Node.js-20+-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
 
 ## Índice
 
