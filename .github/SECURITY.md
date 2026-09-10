@@ -5,7 +5,7 @@
 Si descubres una vulnerabilidad de seguridad en **arsfuturo**, por favor:
 
 1. **NO** crees un issue público
-2. **Envía un email** a [tu-email@ejemplo.com] con los detalles de la vulnerabilidad
+2. **Envía un email** al creador del repositorio con los detalles de la vulnerabilidad
 3. Incluye:
    - Descripción de la vulnerabilidad
    - Pasos para reproducirla
