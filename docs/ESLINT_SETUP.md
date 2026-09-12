@@ -24,13 +24,13 @@ Por eso, para este proyecto la solución recomendada es usar ESLint `9.39.5` en 
 ### 3.1. Ir a la carpeta del backend
 
 ```bash
-cd C:\Users\Anderson\OneDrive\Escritorio\arsfuturo\arsfuturo\backend
+cd C:\Users\directorio\arsfuturo\backend
 ```
 
 ### 3.2. Instalar dependencias base
 
 ```bash
-npm install -D eslint @eslint/js typescript-eslint eslint-plugin-security eslint-plugin-sonarjs eslint-plugin-n
+npm install -D eslint @eslint/js typescript-eslint globals eslint-plugin-security eslint-plugin-sonarjs eslint-plugin-n
 ```
 
 Si ya están instaladas, no hace falta volver a instalarlas.
@@ -53,31 +53,60 @@ En [backend/package.json](../backend/package.json), asegúrate de tener estos sc
 }
 ```
 
+o unicamente
+
+```json
+  "eslint": "eslint . --ext .ts,.js",
+  "eslint:fix": "eslint . --ext .ts,.js --fix"
+```
+
+
 ### 3.4. Crear la configuración de ESLint
 
 Crea el archivo `eslint.config.mjs` dentro de la carpeta backend con este contenido:
 
 ```js
+// BackEnd -> eslint.config.mjs
+
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/**', 'dist/**', 'coverage/**', 'k6/**']
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'coverage/**',
+      'k6/**'
+    ]
   },
+
   js.configs.recommended,
+
   ...tseslint.configs.recommended,
+
   {
-    files: ['**/*.ts', '**/*.js'],
+    files: ['**/*.{ts,js}'],
+
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module'
     },
+
     rules: {
       'no-console': 'warn',
+
       'no-undef': 'off',
+
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]
+
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
+        }
+      ]
     }
   }
 );
@@ -86,13 +115,13 @@ export default tseslint.config(
 ### 3.5. Ejecutar ESLint
 
 ```bash
-npm run lint
+npm run eslint
 ```
 
 Y para corregir automáticamente:
 
 ```bash
-npm run lint:fix
+npm run eslint:fix
 ```
 
 ---
@@ -102,7 +131,7 @@ npm run lint:fix
 ### 4.1. Ir a la carpeta del frontend
 
 ```bash
-cd C:\Users\Anderson\OneDrive\Escritorio\arsfuturo\arsfuturo\FrontEnd
+cd C:\Users\escritorio\arsfuturo\FrontEnd
 ```
 
 ### 4.2. Instalar dependencias compatibles
@@ -119,10 +148,17 @@ En [FrontEnd/package.json](../FrontEnd/package.json), asegúrate de tener esto:
 "scripts": {
   "dev": "vite",
   "build": "vite build",
-  "lint": "eslint . --ext .ts,.tsx",
-  "lint:fix": "eslint . --ext .ts,.tsx --fix",
+  "eslint": "eslint . --ext .ts,.tsx",
+  "eslint:fix": "eslint . --ext .ts,.tsx --fix",
   "preview": "vite preview"
 }
+```
+
+o unicamente
+
+```json
+  "eslint": "eslint . --ext .ts,.tsx",
+  "eslint:fix": "eslint . --ext .ts,.tsx --fix"
 ```
 
 ### 4.4. Crear la configuración de ESLint
@@ -139,33 +175,51 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**']
+    ignores: [
+      'dist/**',
+      'node_modules/**'
+    ]
   },
+
   js.configs.recommended,
+
   ...tseslint.configs.recommended,
+
   {
     files: ['**/*.{ts,tsx}'],
+
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
+
       parserOptions: {
-        ecmaFeatures: { jsx: true }
+        ecmaFeatures: {
+          jsx: true
+        }
       }
     },
+
     plugins: {
       react,
       'react-hooks': reactHooks,
       'jsx-a11y': jsxA11y,
       'react-refresh': reactRefresh
     },
+
     rules: {
       ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }]
+      'react-refresh/only-export-components': [
+        'warn',
+        {
+          allowConstantExport: true
+        }
+      ]
     },
+
     settings: {
       react: {
         version: 'detect'
@@ -178,13 +232,13 @@ export default tseslint.config(
 ### 4.5. Ejecutar ESLint
 
 ```bash
-npm run lint
+npm run eslint
 ```
 
 Y para auto-corregir:
 
 ```bash
-npm run lint:fix
+npm run eslint:fix
 ```
 
 ---
