@@ -48,6 +48,8 @@ Proyecto full-stack para la gestión de una Administradora de Riesgos de Salud (
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
 
+## Preguntar a DeepWiki: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kleibergpm/arsfuturo)
+
 ## Índice
 
 - [Estructura del proyecto](#estructura-del-proyecto)
