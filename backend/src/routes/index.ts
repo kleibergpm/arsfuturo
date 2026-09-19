@@ -1,30 +1,293 @@
-import { Router } from 'express';
-import { z } from 'zod';
-import { authenticate, allow } from '../middleware/auth.js';
-import { validate } from '../middleware/validate.js';
-import { asyncHandler } from '../middleware/errors.js';
-import { authController } from '../controllers/auth.controller.js';
-import { crud } from '../controllers/crud.controller.js';
-import { businessController } from '../controllers/business.controller.js';
-const r = Router(); const id = z.string().uuid(); const uuid = z.object({ id }); const roles = { admin: ['ADMINISTRADOR'], staff: ['ADMINISTRADOR', 'AGENTE'], review: ['ADMINISTRADOR', 'SUPERVISOR'] };
-const authBody = z.object({ usuario: z.string().min(3), password: z.string().min(6) });
-const schemas = {
-  afiliado: z.object({ nombre: z.string().min(2), cedula: z.string().min(8), planId: z.string(), polizaId: z.string().optional().nullable(), estado: z.enum(['ACTIVO','SUSPENDIDO','INACTIVO']).optional(), desde: z.coerce.date(), nacimiento: z.coerce.date().optional().nullable(), telefono: z.string().optional().nullable(), correo: z.string().email().optional().nullable(), dependientes: z.coerce.number().int().min(0).optional() }),
-  proveedor: z.object({ nombre: z.string().min(2), tipo: z.string().min(2), ciudad: z.string().min(2), telefono: z.string().min(7) }),
-  plan: z.object({ id: z.string().min(2), nombre: z.string(), copagoConsulta: z.coerce.number().min(0), cobertura: z.record(z.boolean()) }),
-  poliza: z.object({ id: z.string().min(2), empresa: z.string(), planId: z.string(), desde: z.coerce.date(), hasta: z.coerce.date(), primaMensual: z.coerce.number().positive(), asegurados: z.coerce.number().int().min(0).optional(), estado: z.enum(['VIGENTE','EN_GRACIA','SUSPENDIDA','VENCIDA']).optional() }),
-  reclamo: z.object({ afiliadoId: z.string().uuid(), proveedorId: z.string().uuid(), monto: z.coerce.number().positive(), fecha: z.coerce.date().optional() }),
-  autorizacion: z.object({ afiliadoId: z.string().uuid(), proveedorId: z.string().uuid(), procedimiento: z.string().min(3) }),
-  servicio: z.object({ afiliadoId: z.string().uuid(), proveedorId: z.string().uuid(), autorizacionId: z.string().uuid().optional().nullable(), descripcion: z.string().min(3), costo: z.coerce.number().positive() }),
-  pago: z.object({ servicioId: z.string().uuid(), monto: z.coerce.number().positive(), referenciaBanco: z.string().min(3), metodo: z.string().min(3) }),
+import { Router } from "express";
+import { z } from "zod";
+import { authenticate, allow } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { asyncHandler } from "../middleware/errors.js";
+import { authController } from "../controllers/auth.controller.js";
+import { crud } from "../controllers/crud.controller.js";
+import { businessController } from "../controllers/business.controller.js";
+const r = Router();
+const id = z.string().uuid();
+const uuid = z.object({ id });
+const stringId = z.object({ id: z.string().min(2) });
+const roles = {
+	admin: ["ADMINISTRATOR"],
+	staff: ["ADMINISTRATOR", "AGENT"],
+	review: ["ADMINISTRATOR", "SUPERVISOR"],
 };
-r.post('/auth/login', validate(authBody), asyncHandler(authController.login)); r.get('/auth/me', authenticate, asyncHandler(authController.me));
-const resource = (path, model, schema, include, access = roles.admin) => { const c = crud(model, include); r.get(path, authenticate, allow(...access), asyncHandler(c.list)); r.get(`${path}/:id`, authenticate, allow(...access), asyncHandler(c.get)); r.post(path, authenticate, allow(...access), validate(schema), asyncHandler(c.create)); r.patch(`${path}/:id`, authenticate, allow(...access), validate(schema.partial()), asyncHandler(c.update)); r.delete(`${path}/:id`, authenticate, allow(...access), asyncHandler(c.remove)); };
-resource('/planes', 'plan', schemas.plan, undefined, roles.staff); resource('/proveedores', 'proveedor', schemas.proveedor, undefined, roles.staff); resource('/polizas', 'poliza', schemas.poliza, { plan: true }, roles.admin); resource('/afiliados', 'afiliado', schemas.afiliado, { plan: true, poliza: true }, roles.staff); resource('/reclamos', 'reclamo', schemas.reclamo, { afiliado: true, proveedor: true }, roles.staff);
-resource('/notificaciones', 'notificacion', z.object({ usuarioId: z.string().uuid().optional().nullable(), tipo: z.string(), titulo: z.string().optional().nullable(), mensaje: z.string(), leida: z.boolean().optional() }), undefined, ['ADMINISTRADOR','AGENTE','SUPERVISOR']);
-r.get('/autorizaciones', authenticate, allow(...roles.staff), asyncHandler(crud('autorizacion', { afiliado: true, proveedor: true }).list)); r.get('/autorizaciones/:id', authenticate, allow(...roles.staff), asyncHandler(crud('autorizacion', { afiliado: true, proveedor: true }).get)); r.post('/autorizaciones', authenticate, allow(...roles.staff), validate(schemas.autorizacion), asyncHandler(businessController.createAuthorization)); r.patch('/autorizaciones/:id/aprobar', authenticate, allow(...roles.review), asyncHandler(businessController.decideAuthorization('APROBADA'))); r.patch('/autorizaciones/:id/rechazar', authenticate, allow(...roles.review), asyncHandler(businessController.decideAuthorization('RECHAZADA')));
-r.get('/servicios', authenticate, allow(...roles.staff), asyncHandler(crud('servicioMedico', { afiliado: true, proveedor: true, autorizacion: true }).list)); r.post('/servicios', authenticate, allow(...roles.staff), validate(schemas.servicio), asyncHandler(businessController.createService));
-r.get('/pagos', authenticate, allow(...roles.admin), asyncHandler(crud('pagoProveedor', { servicio: true, proveedor: true }).list)); r.post('/pagos', authenticate, allow(...roles.admin), validate(schemas.pago), asyncHandler(businessController.issuePayment));
-r.get('/facturas', authenticate, allow(...roles.admin), asyncHandler(crud('factura', { poliza: true }).list)); r.post('/facturas/generar', authenticate, allow(...roles.admin), validate(z.object({ periodo: z.string().regex(/^\d{4}-\d{2}$/).optional() })), asyncHandler(businessController.generateInvoices)); r.patch('/facturas/:id/pagar', authenticate, allow(...roles.admin), validate(z.object({ referencia: z.string().min(3) })), asyncHandler(businessController.payInvoice)); r.patch('/facturas/:id/recordatorio', authenticate, allow(...roles.admin), asyncHandler(businessController.remindInvoice)); r.patch('/facturas/:id/gracia', authenticate, allow(...roles.admin), asyncHandler(businessController.graceInvoice)); r.patch('/facturas/:id/suspender', authenticate, allow(...roles.admin), asyncHandler(businessController.suspendInvoice));
-r.get('/dashboard/resumen', authenticate, asyncHandler(businessController.dashboard));
+const authBody = z.object({
+	username: z.string().min(3),
+	password: z.string().min(6),
+});
+const schemas = {
+	insured: z.object({
+		name: z.string().min(2),
+		nationalId: z.string().min(8),
+		planId: z.string(),
+		policyId: z.string().optional().nullable(),
+		status: z.enum(["ACTIVE", "SUSPENDED", "INACTIVE"]).optional(),
+		startDate: z.coerce.date(),
+		birthDate: z.coerce.date().optional().nullable(),
+		phone: z.string().optional().nullable(),
+		email: z.string().email().optional().nullable(),
+		dependents: z.coerce.number().int().min(0).optional(),
+	}),
+	provider: z.object({
+		name: z.string().min(2),
+		type: z.string().min(2),
+		city: z.string().min(2),
+		phone: z.string().min(7),
+	}),
+	plan: z.object({
+		id: z.string().min(2),
+		name: z.string(),
+		consultationCopay: z.coerce.number().min(0),
+		coverage: z.record(z.string(), z.boolean()),
+	}),
+	policy: z.object({
+		id: z.string().min(2),
+		company: z.string(),
+		planId: z.string(),
+		startDate: z.coerce.date(),
+		endDate: z.coerce.date(),
+		monthlyPremium: z.coerce.number().positive(),
+		insuredCount: z.coerce.number().int().min(0).optional(),
+		status: z.enum(["ACTIVE", "IN_GRACE", "SUSPENDED", "EXPIRED"]).optional(),
+	}),
+	claim: z.object({
+		insuredId: z.string().uuid(),
+		providerId: z.string().uuid(),
+		amount: z.coerce.number().positive(),
+		date: z.coerce.date().optional(),
+	}),
+	authorization: z.object({
+		insuredId: z.string().uuid(),
+		providerId: z.string().uuid(),
+		procedure: z.string().min(3),
+	}),
+	service: z.object({
+		insuredId: z.string().uuid(),
+		providerId: z.string().uuid(),
+		authorizationId: z.string().uuid().optional().nullable(),
+		description: z.string().min(3),
+		cost: z.coerce.number().positive(),
+	}),
+	payment: z.object({
+		serviceId: z.string().uuid(),
+		amount: z.coerce.number().positive(),
+		bankReference: z.string().min(3),
+		method: z.string().min(3),
+	}),
+};
+r.post("/auth/login", validate(authBody), asyncHandler(authController.login));
+r.get("/auth/me", authenticate, asyncHandler(authController.me));
+const resource = (
+	path,
+	model,
+	schema,
+	include,
+	access = roles.admin,
+	idSchema = uuid,
+) => {
+	const c = crud(model, include);
+	r.get(path, authenticate, allow(...access), asyncHandler(c.list));
+	r.get(
+		`${path}/:id`,
+		authenticate,
+		allow(...access),
+		validate(idSchema, "params"),
+		asyncHandler(c.get),
+	);
+	r.post(
+		path,
+		authenticate,
+		allow(...access),
+		validate(schema),
+		asyncHandler(c.create),
+	);
+	r.patch(
+		`${path}/:id`,
+		authenticate,
+		allow(...access),
+		validate(idSchema, "params"),
+		validate(schema.partial()),
+		asyncHandler(c.update),
+	);
+	r.delete(
+		`${path}/:id`,
+		authenticate,
+		allow(...access),
+		validate(idSchema, "params"),
+		asyncHandler(c.remove),
+	);
+};
+resource(
+	"/planes",
+	"plan",
+	schemas.plan,
+	undefined,
+	roles.staff,
+	stringId,
+);
+resource("/proveedores", "provider", schemas.provider, undefined, roles.staff);
+resource(
+	"/polizas",
+	"policy",
+	schemas.policy,
+	{ plan: true },
+	roles.admin,
+	stringId,
+);
+resource(
+	"/afiliados",
+	"insured",
+	schemas.insured,
+	{ plan: true, policy: true },
+	roles.staff,
+);
+resource(
+	"/reclamos",
+	"claim",
+	schemas.claim,
+	{ insured: true, provider: true },
+	roles.staff,
+);
+r.patch(
+	"/reclamos/:id/aprobar",
+	authenticate,
+	allow(...roles.review),
+	asyncHandler(businessController.decideClaim("APPROVED")),
+);
+r.patch(
+	"/reclamos/:id/rechazar",
+	authenticate,
+	allow(...roles.review),
+	asyncHandler(businessController.decideClaim("REJECTED")),
+);
+resource(
+	"/notificaciones",
+	"notification",
+	z.object({
+		userId: z.string().uuid().optional().nullable(),
+		type: z.string(),
+		title: z.string().optional().nullable(),
+		message: z.string(),
+		read: z.boolean().optional(),
+	}),
+	undefined,
+	["ADMINISTRATOR", "AGENT", "SUPERVISOR"],
+);
+r.get(
+	"/autorizaciones",
+	authenticate,
+	allow(...roles.staff),
+	asyncHandler(crud("authorization", { insured: true, provider: true }).list),
+);
+r.get(
+	"/autorizaciones/:id",
+	authenticate,
+	allow(...roles.staff),
+	asyncHandler(crud("authorization", { insured: true, provider: true }).get),
+);
+r.post(
+	"/autorizaciones",
+	authenticate,
+	allow(...roles.staff),
+	validate(schemas.authorization),
+	asyncHandler(businessController.createAuthorization),
+);
+r.patch(
+	"/autorizaciones/:id/aprobar",
+	authenticate,
+	allow(...roles.review),
+	asyncHandler(businessController.decideAuthorization("APPROVED")),
+);
+r.patch(
+	"/autorizaciones/:id/rechazar",
+	authenticate,
+	allow(...roles.review),
+	asyncHandler(businessController.decideAuthorization("REJECTED")),
+);
+r.get(
+	"/servicios",
+	authenticate,
+	allow(...roles.staff),
+	asyncHandler(
+		crud("medicalService", {
+			insured: true,
+			provider: true,
+			authorization: true,
+		}).list,
+	),
+);
+r.post(
+	"/servicios",
+	authenticate,
+	allow(...roles.staff),
+	validate(schemas.service),
+	asyncHandler(businessController.createService),
+);
+r.get(
+	"/pagos",
+	authenticate,
+	allow(...roles.admin),
+	asyncHandler(crud("providerPayment", { service: true, provider: true }).list),
+);
+r.post(
+	"/pagos",
+	authenticate,
+	allow(...roles.admin),
+	validate(schemas.payment),
+	asyncHandler(businessController.issuePayment),
+);
+r.get(
+	"/facturas",
+	authenticate,
+	allow(...roles.admin),
+	asyncHandler(crud("invoice", { policy: true }).list),
+);
+r.post(
+	"/facturas/generar",
+	authenticate,
+	allow(...roles.admin),
+	validate(
+		z.object({
+			period: z
+				.string()
+				.regex(/^\d{4}-\d{2}$/)
+				.optional(),
+		}),
+	),
+	asyncHandler(businessController.generateInvoices),
+);
+r.patch(
+	"/facturas/:id/pagar",
+	authenticate,
+	allow(...roles.admin),
+	validate(z.object({ reference: z.string().min(3) })),
+	asyncHandler(businessController.payInvoice),
+);
+r.patch(
+	"/facturas/:id/recordatorio",
+	authenticate,
+	allow(...roles.admin),
+	asyncHandler(businessController.remindInvoice),
+);
+r.patch(
+	"/facturas/:id/gracia",
+	authenticate,
+	allow(...roles.admin),
+	asyncHandler(businessController.graceInvoice),
+);
+r.patch(
+	"/facturas/:id/suspender",
+	authenticate,
+	allow(...roles.admin),
+	asyncHandler(businessController.suspendInvoice),
+);
+r.get(
+	"/dashboard/resumen",
+	authenticate,
+	asyncHandler(businessController.dashboard),
+);
 export default r;

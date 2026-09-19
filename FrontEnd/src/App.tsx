@@ -1,11 +1,10 @@
-import React, { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Plus,
   FileDown,
   RefreshCw,
-  ShieldCheck,
   Stethoscope,
   Users,
   FileText,
@@ -18,14 +17,11 @@ import {
   Mail,
   Filter,
   Wallet,
-  Sparkles,
   Loader2,
   Home,
   LogOut,
   User,
   Lock,
-  Bell,
-  X,
 } from "lucide-react";
 import {
   BarChart,
@@ -54,12 +50,21 @@ import {
   adaptReclamo,
   adaptServicio,
   adaptUser,
+  toAuthorizationPayload,
+  toClaimPayload,
+  toInsuredPayload,
+  toInsuredUpdatePayload,
+  toPaymentPayload,
+  toServicePayload,
 } from "./api/adapters";
-import { canAuthorize, getPlanById } from "./data/plans";
 import { Badge, Button, Card, Divider, Input, Modal, NotificationContainer, Select, cls } from "./components/ui";
 
 const currency = (n) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
 const formatDate = (d) => new Intl.DateTimeFormat("es-DO").format(new Date(d));
+// La cobertura por procedimiento ahora la decide solo el backend (createAuthorization);
+// esto es un simple lookup de presentación, no una regla de negocio.
+const getPlanById = (plans, planId) =>
+  plans.find((p) => String(p.id) === String(planId)) || { id: planId, nombre: "Plan no disponible" };
 function exportCsv(filename, rows) {
   const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -73,8 +78,7 @@ function exportCsv(filename, rows) {
 
 export default function ARS_Futuro_App() {
   const [tab, setTab] = useState("dashboard");
-  const [role, setRole] = useState("Agente");
-  
+
   // Estados de autenticación
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -92,7 +96,9 @@ export default function ARS_Futuro_App() {
   const [pagos, setPagos] = useState([]);
   const [facturas, setFacturas] = useState([]);
 
-  const [q, setQ] = useState("");
+  // Nota: no hay un input conectado a este filtro en la pestaña de afiliados hoy
+  // (setQ nunca se llama); se deja de solo lectura para no tocar comportamiento existente.
+  const [q] = useState("");
   const [loading, setLoading] = useState(false);
   const [openNuevoAfiliado, setOpenNuevoAfiliado] = useState(false);
 
@@ -105,7 +111,6 @@ export default function ARS_Futuro_App() {
     authApi.me().then((user) => {
       const authenticatedUser = adaptUser(user);
       setCurrentUser(authenticatedUser);
-      setRole(authenticatedUser.rol);
       setIsAuthenticated(true);
     }).catch(() => {
       localStorage.removeItem("arsfuturo_token");
@@ -158,27 +163,27 @@ export default function ARS_Futuro_App() {
     // Generar datos de los últimos 6 meses basados en reclamaciones reales
     const meses = [];
     const hoy = new Date();
-    
+
     for (let i = 5; i >= 0; i--) {
       const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
       const nombreMes = fecha.toLocaleDateString('es-ES', { month: 'short' });
       const mesAno = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-      
+
       // Calcular monto real de reclamaciones para ese mes
       const reclamacionesMes = reclamaciones.filter(r => {
         const fechaReclamo = new Date(r.fecha);
         const mesReclamo = `${fechaReclamo.getFullYear()}-${String(fechaReclamo.getMonth() + 1).padStart(2, '0')}`;
         return mesReclamo === mesAno;
       });
-      
+
       const montoTotal = reclamacionesMes.reduce((sum, r) => sum + r.monto, 0);
-      
+
       meses.push({
         mes: nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1),
         monto: montoTotal
       });
     }
-    
+
     return meses;
   }, [reclamaciones, afiliados]);
 
@@ -186,11 +191,11 @@ export default function ARS_Futuro_App() {
     const porPlan = planes.map((p) => {
       const autosPlan = autorizaciones.filter((a) => (afiliados.find((x) => x.id === a.afiliadoId)?.plan) === p.id);
       const total = autosPlan.length;
-      
+
       if (total === 0) {
         return { plan: p.id, tasa: 0 };
       }
-      
+
       const aprob = autosPlan.filter((x) => x.estado === "Aprobada").length;
       return { plan: p.id, tasa: Math.round((aprob / total) * 100) };
     });
@@ -217,21 +222,21 @@ export default function ARS_Futuro_App() {
   };
 
   const registrarReclamo = async ({ afiliadoId, proveedorId, monto }) => {
-    const nuevo = adaptReclamo(await mutationsApi.reclamo({ afiliadoId, proveedorId, monto: Number(monto) }));
+    const nuevo = adaptReclamo(await mutationsApi.reclamo(toClaimPayload({ afiliadoId, proveedorId, monto: Number(monto) })));
     setReclamaciones((prev) => [nuevo, ...prev]);
   };
 
   const crearAutorizacion = async ({ afiliadoId, proveedorId, procedimiento }) => {
     const af = afiliados.find((a) => String(a.id) === String(afiliadoId));
     if (!af) return null;
-    const nueva = adaptAutorizacion(await mutationsApi.autorizacion({ afiliadoId, proveedorId, procedimiento }));
+    const nueva = adaptAutorizacion(await mutationsApi.autorizacion(toAuthorizationPayload({ afiliadoId, proveedorId, procedimiento })));
     setAutorizaciones((prev) => [nueva, ...prev]);
     return nueva;
   };
 
   // Registrar Servicio Médico (CU07)
   const registrarServicio = async ({ afiliadoId, proveedorId, descripcion, costo, autorizacionId }) => {
-    const nuevo = adaptServicio(await mutationsApi.servicio({ afiliadoId, proveedorId, descripcion, costo: Number(costo), autorizacionId: autorizacionId || null }));
+    const nuevo = adaptServicio(await mutationsApi.servicio(toServicePayload({ afiliadoId, proveedorId, descripcion, costo, autorizacionId })));
     setServicios(prev => [nuevo, ...prev]);
     return nuevo;
   };
@@ -242,7 +247,7 @@ export default function ARS_Futuro_App() {
       alert("No tienes permisos para emitir pagos");
       return null;
     }
-    const nuevo = adaptPago(await mutationsApi.pago({ servicioId, monto: Number(monto), referenciaBanco, metodo }));
+    const nuevo = adaptPago(await mutationsApi.pago(toPaymentPayload({ servicioId, monto, referenciaBanco, metodo })));
     setPagos(prev => [nuevo, ...prev]);
     setServicios(prev => prev.map(s => String(s.id) === String(servicioId) ? { ...s, estado: "Pagado" } : s));
     return nuevo;
@@ -250,17 +255,7 @@ export default function ARS_Futuro_App() {
 
   // Crear nuevo afiliado
   const crearAfiliado = async ({ nombre, cedula, plan, estado = "Activo", desde, nacimiento, telefono, correo, dependientes = 0 }) => {
-    const nuevo = adaptAfiliado(await mutationsApi.afiliado({
-      nombre: nombre?.trim(),
-      cedula: cedula?.trim(),
-      planId: plan,
-      estado: estado === "Activo" ? "ACTIVO" : "SUSPENDIDO",
-      desde: desde || new Date().toISOString().slice(0, 10),
-      nacimiento: nacimiento || null,
-      telefono: telefono || null,
-      correo: correo || null,
-      dependientes: Number(dependientes) || 0,
-    }));
+    const nuevo = adaptAfiliado(await mutationsApi.afiliado(toInsuredPayload({ nombre, cedula, plan, estado, desde, nacimiento, telefono, correo, dependientes })));
     setAfiliados(prev => [nuevo, ...prev]);
     addNotification({ type: 'success', title: 'Afiliado creado', message: `${nuevo.nombre} agregado con ID ${nuevo.id}.` });
     return nuevo;
@@ -268,13 +263,13 @@ export default function ARS_Futuro_App() {
 
   // Actualizar datos de afiliado (CU10)
   const actualizarAfiliado = async (id, { telefono, correo }) => {
-    const actualizado = adaptAfiliado(await mutationsApi.actualizarAfiliado(id, { telefono, correo }));
+    const actualizado = adaptAfiliado(await mutationsApi.actualizarAfiliado(id, toInsuredUpdatePayload({ telefono, correo })));
     setAfiliados(prev => prev.map(a => a.id === id ? actualizado : a));
   };
 
   // Facturación de pólizas (Pago de Prima Mensual)
   const generarFacturasMes = async () => {
-    const periodo = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    const periodo = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
     const yaExisten = facturas.some(f => f.periodo === periodo);
     if (yaExisten) {
       addNotification({ id: Date.now(), type: 'info', title: 'Facturación', message: `Las facturas del periodo ${periodo} ya existen.` });
@@ -293,7 +288,6 @@ export default function ARS_Futuro_App() {
   };
 
   const registrarPagoPrima = async ({ facturaId, referencia }) => {
-    const fecha = new Date().toISOString().slice(0,10);
     const factura = facturas.find(f => f.id === facturaId);
     if (!factura) return null;
     const actualizada = adaptFactura(await mutationsApi.pagarFactura(facturaId, referencia));
@@ -346,7 +340,6 @@ export default function ARS_Futuro_App() {
       localStorage.setItem("arsfuturo_token", response.token);
       const user = adaptUser(response.user);
       setCurrentUser(user);
-      setRole(user.rol);
       setIsAuthenticated(true);
       setLoginForm({ usuario: "", password: "" });
     } catch (error) {
@@ -360,7 +353,6 @@ export default function ARS_Futuro_App() {
     localStorage.removeItem("arsfuturo_token");
     setIsAuthenticated(false);
     setCurrentUser(null);
-    setRole("Agente");
     setTab("dashboard");
     // Resetear datos al cerrar sesión
     clearSessionData();
@@ -370,22 +362,22 @@ export default function ARS_Futuro_App() {
   const addNotification = (notificationData) => {
     const id = Date.now();
     let notification;
-    
+
     // Manejar tanto objetos como strings
     if (typeof notificationData === 'string') {
       notification = { id, message: notificationData, type: 'success', timestamp: new Date() };
     } else {
-      notification = { 
-        id, 
-        message: notificationData.message, 
+      notification = {
+        id,
+        message: notificationData.message,
         type: notificationData.type || 'success',
         title: notificationData.title,
-        timestamp: new Date() 
+        timestamp: new Date()
       };
     }
-    
+
     setNotifications(prev => [notification, ...prev]);
-    
+
     // Auto-remover después de 5 segundos
     setTimeout(() => {
       removeNotification(id);
@@ -413,16 +405,16 @@ export default function ARS_Futuro_App() {
         <Card className="w-full max-w-md p-8">
           <div className="text-center mb-8">
             <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-sm mx-auto mb-4">
-              <img 
-                src="/logo_ars.png" 
-                alt="ARS Futuro Logo" 
+              <img
+                src="/logo_ars.png"
+                alt="ARS Futuro Logo"
                 className="w-full h-full object-contain"
               />
             </div>
             <h1 className="text-2xl font-bold text-slate-800 mb-2">ARS Futuro</h1>
             <p className="text-slate-600">Iniciar Sesión</p>
           </div>
-          
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
@@ -437,7 +429,7 @@ export default function ARS_Futuro_App() {
                 />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
               <div className="relative">
@@ -452,26 +444,26 @@ export default function ARS_Futuro_App() {
                 />
               </div>
             </div>
-            
+
             {loginError && (
               <div className="text-red-600 text-sm text-center bg-red-50 p-2 rounded-lg">
                 {loginError}
               </div>
             )}
-            
+
             <Button type="submit" className="w-full" disabled={loginLoading}>
               {loginLoading ? "Conectando..." : "Iniciar Sesión"}
             </Button>
           </form>
-          
+
           <div className="mt-6 p-4 bg-slate-50 rounded-lg">
             <p className="text-xs text-slate-600 mb-2 font-medium">Usuarios de demostración:</p>
             <div className="space-y-1 text-xs text-slate-500">
               <div>• admin / admin123 (Administrador)</div>
               <div>• agente / agente123 (Agente ARS)</div>
               <div>• supervisor / super123 (Supervisor)</div>
-           </div>
-         </div>
+            </div>
+          </div>
         </Card>
       </div>
     );
@@ -483,9 +475,9 @@ export default function ARS_Futuro_App() {
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <div className="h-11 w-11 rounded-2xl overflow-hidden shadow-sm">
-              <img 
-                src="/logo_ars.png" 
-                alt="ARS Futuro Logo" 
+              <img
+                src="/logo_ars.png"
+                alt="ARS Futuro Logo"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -500,23 +492,23 @@ export default function ARS_Futuro_App() {
 
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="flex-1 relative justify-center items-center min-w-0">
-              
+
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/50 rounded-xl border border-slate-200">
-              <User className="w-4 h-4 text-slate-600" />
-              <span className="text-sm font-medium text-slate-700">{currentUser?.nombre}</span>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/50 rounded-xl border border-slate-200">
+                <User className="w-4 h-4 text-slate-600" />
+                <span className="text-sm font-medium text-slate-700">{currentUser?.nombre}</span>
+              </div>
+              <div className="sm:hidden flex items-center gap-2 px-2 py-2 bg-white/50 rounded-xl border border-slate-200">
+                <User className="w-4 h-4 text-slate-600" />
+              </div>
+              <Button onClick={handleLogout} variant="ghost" size="sm" className="flex items-center gap-1">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Salir</span>
+              </Button>
             </div>
-            <div className="sm:hidden flex items-center gap-2 px-2 py-2 bg-white/50 rounded-xl border border-slate-200">
-              <User className="w-4 h-4 text-slate-600" />
-            </div>
-            <Button onClick={handleLogout} variant="ghost" size="sm" className="flex items-center gap-1">
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Salir</span>
-            </Button>
           </div>
         </div>
-      </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 flex-1">
@@ -540,7 +532,7 @@ export default function ARS_Futuro_App() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-24 text-slate-500"><Loader2 className="w-5 h-5 mr-2 animate-spin"/>Cargando…</div>
+          <div className="flex items-center justify-center py-24 text-slate-500"><Loader2 className="w-5 h-5 mr-2 animate-spin" />Cargando…</div>
         ) : (
           <AnimatePresence mode="wait">
             {tab === "dashboard" && (
@@ -622,10 +614,10 @@ export default function ARS_Futuro_App() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button variant="primary" className="flex items-center justify-center pt-1" onClick={() => setOpenNuevoAfiliado(true)}>
-                        <Plus className="w-4 h-4 mr-2"/> Nuevo afiliado
+                        <Plus className="w-4 h-4 mr-2" /> Nuevo afiliado
                       </Button>
-                      <Button variant="ghost" className="flex items-center justify-center pt-1" onClick={() => exportCsv("afiliados.csv", [["ID","Nombre","Cédula","Plan","Estado","Desde","Nacimiento","Teléfono","Correo","Dependientes"], ...afiliadosFiltrados.map(a => [a.id,a.nombre,a.cedula,a.plan,a.estado,formatDate(a.desde),formatDate(a.nacimiento),a.telefono,a.correo,a.dependientes])])}>
-                        <FileDown className="w-4 h-4 mr-2"/> <span className="hidden sm:inline">Exportar</span>
+                      <Button variant="ghost" className="flex items-center justify-center pt-1" onClick={() => exportCsv("afiliados.csv", [["ID", "Nombre", "Cédula", "Plan", "Estado", "Desde", "Nacimiento", "Teléfono", "Correo", "Dependientes"], ...afiliadosFiltrados.map(a => [a.id, a.nombre, a.cedula, a.plan, a.estado, formatDate(a.desde), formatDate(a.nacimiento), a.telefono, a.correo, a.dependientes])])}>
+                        <FileDown className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Exportar</span>
                       </Button>
                     </div>
                   </div>
@@ -655,12 +647,12 @@ export default function ARS_Futuro_App() {
                             <td className="py-2 pr-2">{formatDate(a.desde)}</td>
                             <td className="py-2 pr-2 text-slate-600">
                               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                <span className="inline-flex items-center gap-1 text-xs"><Phone className="w-3 h-3"/>{a.telefono}</span>
-                                <span className="inline-flex items-center gap-1 text-xs"><Mail className="w-3 h-3"/>{a.correo}</span>
+                                <span className="inline-flex items-center gap-1 text-xs"><Phone className="w-3 h-3" />{a.telefono}</span>
+                                <span className="inline-flex items-center gap-1 text-xs"><Mail className="w-3 h-3" />{a.correo}</span>
                               </div>
                             </td>
                             <td className="py-2 pr-2">
-                              <AfiliadoActions afiliado={a} afiliados={afiliados} proveedores={proveedores} planes={planes} crearAutorizacion={crearAutorizacion} addNotification={addNotification} onEditarAfiliado={actualizarAfiliado} />
+                              <AfiliadoActions afiliado={a} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} onEditarAfiliado={actualizarAfiliado} />
                             </td>
                           </tr>
                         ))}
@@ -672,7 +664,7 @@ export default function ARS_Futuro_App() {
             )}
 
             {tab === "autoriz" && (
-              <AutorizacionesTab key="autoriz" autorizaciones={autorizaciones} afiliados={afiliados} proveedores={proveedores} planes={planes} aprobarAut={aprobarAut} rechazarAut={rechazarAut} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
+              <AutorizacionesTab key="autoriz" autorizaciones={autorizaciones} afiliados={afiliados} proveedores={proveedores} aprobarAut={aprobarAut} rechazarAut={rechazarAut} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
             )}
 
             {tab === "reclamos" && (
@@ -696,7 +688,7 @@ export default function ARS_Futuro_App() {
             )}
 
             {tab === "facturas" && currentUser?.rol === "Administrador" && (
-              <FacturacionTab key="facturas" facturas={facturas} polizas={polizas} onGenerarMes={generarFacturasMes} onRecordatorio={enviarRecordatorioFactura} onRegistrarPago={registrarPagoPrima} onGracia={marcarPeriodoGracia} onSuspender={suspenderPolizaPorFactura} addNotification={addNotification} />
+              <FacturacionTab key="facturas" facturas={facturas} polizas={polizas} onGenerarMes={generarFacturasMes} onRecordatorio={enviarRecordatorioFactura} onRegistrarPago={registrarPagoPrima} onGracia={marcarPeriodoGracia} onSuspender={suspenderPolizaPorFactura} />
             )}
           </AnimatePresence>
         )}
@@ -718,35 +710,34 @@ export default function ARS_Futuro_App() {
           </div>
         </div>
       </footer>
-      
+
       {/* Sistema de notificaciones */}
       <NotificationContainer notifications={notifications} onRemove={removeNotification} />
     </div>
   );
 }
 
-function AfiliadoActions({ afiliado, afiliados, proveedores, planes, crearAutorizacion, addNotification, onEditarAfiliado }) {
+function AfiliadoActions({ afiliado, afiliados, proveedores, crearAutorizacion, addNotification, onEditarAfiliado }) {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   return (
     <div className="flex items-center gap-2">
       <Button variant="primary" size="sm" className="flex items-center justify-center" onClick={() => setOpen(true)}>
-        <Plus className="w-4 h-4 mr-1"/> Nueva autorización
+        <Plus className="w-4 h-4 mr-1" /> Nueva autorización
       </Button>
       <Button variant="ghost" size="sm" className="flex items-center justify-center" onClick={() => setOpenEdit(true)}>
-        <User className="w-4 h-4 mr-1"/> Editar
+        <User className="w-4 h-4 mr-1" /> Editar
       </Button>
-      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliadoDefault={afiliado} afiliados={afiliados} proveedores={proveedores} planes={planes} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
+      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliadoDefault={afiliado} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
       <EditarAfiliadoModal open={openEdit} onClose={() => setOpenEdit(false)} afiliado={afiliado} onGuardar={onEditarAfiliado} addNotification={addNotification} />
     </div>
   );
 }
 
-function NuevaAutorizacionModal({ open, onClose, afiliadoDefault = null, afiliados = [], proveedores = [], planes = [], crearAutorizacion, addNotification }) {
+function NuevaAutorizacionModal({ open, onClose, afiliadoDefault = null, afiliados = [], proveedores = [], crearAutorizacion, addNotification }) {
   const [afiliadoId, setAfiliadoId] = useState(afiliadoDefault?.id ? String(afiliadoDefault.id) : "");
   const [proveedorId, setProveedorId] = useState(proveedores[0]?.id ? String(proveedores[0].id) : "");
   const [procedimiento, setProcedimiento] = useState("Consulta general");
-  const [valid, setValid] = useState(null);
 
   useEffect(() => {
     setAfiliadoId(afiliadoDefault?.id ? String(afiliadoDefault.id) : "");
@@ -755,19 +746,12 @@ function NuevaAutorizacionModal({ open, onClose, afiliadoDefault = null, afiliad
   const afiliadosAll = afiliados;
   const proveedoresAll = proveedores;
 
-  const validar = () => {
-    const af = afiliadosAll.find((a) => String(a.id) === String(afiliadoId));
-    if (!af) return setValid(null);
-    setValid(canAuthorize(planes, af, procedimiento));
-  };
-
   const crear = async () => {
     if (!afiliadoId || !proveedorId || !procedimiento) return;
     const nueva = await crearAutorizacion({ afiliadoId, proveedorId, procedimiento });
     if (!nueva) return;
-    setValid(null);
     onClose?.();
-    
+
     // Usar el sistema de notificaciones en lugar de alert
     setTimeout(() => {
       addNotification({
@@ -803,14 +787,9 @@ function NuevaAutorizacionModal({ open, onClose, afiliadoDefault = null, afiliad
           <Input value={procedimiento} onChange={setProcedimiento} placeholder="Ej.: Consulta general / Perfil Lipídico / Rayos X…" />
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        <Button variant="ghost" className="flex items-center justify-center" onClick={validar}><ShieldCheck className="w-4 h-4 mr-1"/> Validar cobertura</Button>
-        {valid === true && <Badge color="green">Cubre según plan</Badge>}
-        {valid === false && <Badge color="red">No cubre</Badge>}
-      </div>
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-        <Button variant="success" className="flex items-center justify-center" onClick={crear}><CheckCircle2 className="w-4 h-4 mr-1"/>Crear autorización</Button>
+        <Button variant="success" className="flex items-center justify-center" onClick={crear}><CheckCircle2 className="w-4 h-4 mr-1" />Crear autorización</Button>
       </div>
     </Modal>
   );
@@ -857,7 +836,7 @@ function NuevoAfiliadoModal({ open, onClose, planes = [], crearAfiliado, addNoti
   const [cedula, setCedula] = useState("");
   const [plan, setPlan] = useState("BASICO");
   const [estado, setEstado] = useState("Activo");
-  const [desde, setDesde] = useState(new Date().toISOString().slice(0,10));
+  const [desde, setDesde] = useState(new Date().toISOString().slice(0, 10));
   const [nacimiento, setNacimiento] = useState("");
   const [telefono, setTelefono] = useState("");
   const [correo, setCorreo] = useState("");
@@ -868,7 +847,7 @@ function NuevoAfiliadoModal({ open, onClose, planes = [], crearAfiliado, addNoti
     setCedula("");
     setPlan("BASICO");
     setEstado("Activo");
-    setDesde(new Date().toISOString().slice(0,10));
+    setDesde(new Date().toISOString().slice(0, 10));
     setNacimiento("");
     setTelefono("");
     setCorreo("");
@@ -936,13 +915,13 @@ function NuevoAfiliadoModal({ open, onClose, planes = [], crearAfiliado, addNoti
       <Divider />
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-        <Button variant="success" className="flex items-center justify-center" onClick={crear}><CheckCircle2 className="w-4 h-4 mr-1"/>Crear afiliado</Button>
+        <Button variant="success" className="flex items-center justify-center" onClick={crear}><CheckCircle2 className="w-4 h-4 mr-1" />Crear afiliado</Button>
       </div>
     </Modal>
   );
 }
 
-function AutorizacionesTab({ autorizaciones, afiliados, proveedores, planes, aprobarAut, rechazarAut, crearAutorizacion, addNotification }) {
+function AutorizacionesTab({ autorizaciones, afiliados, proveedores, aprobarAut, rechazarAut, crearAutorizacion, addNotification }) {
   const [estado, setEstado] = useState("Todos");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -972,10 +951,10 @@ function AutorizacionesTab({ autorizaciones, afiliados, proveedores, planes, apr
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
             <Button className="flex items-center justify-center flex-1 sm:flex-initial" onClick={() => setOpen(true)}>
-              <Plus className="w-4 h-4 mr-1"/> Nueva
+              <Plus className="w-4 h-4 mr-1" /> Nueva
             </Button>
-            <Button variant="ghost" className="flex items-center justify-center flex-1 sm:flex-initial" onClick={() => exportCsv("autorizaciones.csv", [["ID","Afiliado","Procedimiento","Proveedor","Estado","Fecha","Copago"], ...data.map(a => [a.id, afiliados.find(x=>x.id===a.afiliadoId)?.nombre, a.procedimiento, proveedores.find(p=>p.id===a.proveedorId)?.nombre, a.estado, formatDate(a.fecha), a.copago])])}>
-              <FileDown className="w-4 h-4 mr-2"/> Exportar
+            <Button variant="ghost" className="flex items-center justify-center flex-1 sm:flex-initial" onClick={() => exportCsv("autorizaciones.csv", [["ID", "Afiliado", "Procedimiento", "Proveedor", "Estado", "Fecha", "Copago"], ...data.map(a => [a.id, afiliados.find(x => x.id === a.afiliadoId)?.nombre, a.procedimiento, proveedores.find(p => p.id === a.proveedorId)?.nombre, a.estado, formatDate(a.fecha), a.copago])])}>
+              <FileDown className="w-4 h-4 mr-2" /> Exportar
             </Button>
           </div>
         </div>
@@ -1005,8 +984,8 @@ function AutorizacionesTab({ autorizaciones, afiliados, proveedores, planes, apr
                   <td className="py-2 pr-2">{formatDate(a.fecha)}</td>
                   <td className="py-2 pr-2">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
-                      <Button size="sm" variant="success" className="flex items-center justify-center w-full sm:w-auto text-xs" onClick={() => aprobarAut(a.id)}><CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1"/>Aprobar</Button>
-                      <Button size="sm" variant="danger" className="flex items-center justify-center w-full sm:w-auto text-xs" onClick={() => rechazarAut(a.id)}><XCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1"/>Rechazar</Button>
+                      <Button size="sm" variant="success" className="flex items-center justify-center w-full sm:w-auto text-xs" onClick={() => aprobarAut(a.id)}><CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Aprobar</Button>
+                      <Button size="sm" variant="danger" className="flex items-center justify-center w-full sm:w-auto text-xs" onClick={() => rechazarAut(a.id)}><XCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Rechazar</Button>
                     </div>
                   </td>
                 </tr>
@@ -1016,7 +995,7 @@ function AutorizacionesTab({ autorizaciones, afiliados, proveedores, planes, apr
         </div>
       </Card>
 
-      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliados={afiliados} proveedores={proveedores} planes={planes} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
+      <NuevaAutorizacionModal open={open} onClose={() => setOpen(false)} afiliados={afiliados} proveedores={proveedores} crearAutorizacion={crearAutorizacion} addNotification={addNotification} />
     </motion.div>
   );
 }
@@ -1054,10 +1033,10 @@ function ReclamosTab({ reclamaciones, afiliados, proveedores, onRegistrar, addNo
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
               <Button className="flex items-center justify-center flex-1 sm:flex-initial" onClick={() => setOpen(true)}>
-                <Plus className="w-4 h-4 mr-1"/> Registrar reclamo
+                <Plus className="w-4 h-4 mr-1" /> Registrar reclamo
               </Button>
-              <Button variant="ghost" className="flex items-center justify-center flex-1 sm:flex-initial" onClick={() => exportCsv("reclamaciones.csv", [["ID","Afiliado","Proveedor","Monto","Estado","Fecha"], ...data.map(r => [r.id, afiliados.find(x=>x.id===r.afiliadoId)?.nombre, proveedores.find(p=>p.id===r.proveedorId)?.nombre, r.monto, r.estado, formatDate(r.fecha)])])}>
-                <FileDown className="w-4 h-4 mr-2"/> Exportar
+              <Button variant="ghost" className="flex items-center justify-center flex-1 sm:flex-initial" onClick={() => exportCsv("reclamaciones.csv", [["ID", "Afiliado", "Proveedor", "Monto", "Estado", "Fecha"], ...data.map(r => [r.id, afiliados.find(x => x.id === r.afiliadoId)?.nombre, proveedores.find(p => p.id === r.proveedorId)?.nombre, r.monto, r.estado, formatDate(r.fecha)])])}>
+                <FileDown className="w-4 h-4 mr-2" /> Exportar
               </Button>
             </div>
           </div>
@@ -1099,12 +1078,12 @@ function ReclamosTab({ reclamaciones, afiliados, proveedores, onRegistrar, addNo
               <div className="flex justify-between"><span>Monto total:</span><span className="font-medium">{currency(total)}</span></div>
             </div>
           </Card>
-          
+
           <Card>
             <h4 className="font-medium mb-2">Aprobación vs Rechazo</h4>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
-                <Pie dataKey="value" data={[{ name: "Aprobadas", value: data.filter(d=>d.estado==="Aprobada").length }, { name: "Rechazadas", value: data.filter(d=>d.estado==="Rechazada").length }]} outerRadius={70} label />
+                <Pie dataKey="value" data={[{ name: "Aprobadas", value: data.filter(d => d.estado === "Aprobada").length }, { name: "Rechazadas", value: data.filter(d => d.estado === "Rechazada").length }]} outerRadius={70} label />
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
@@ -1158,7 +1137,7 @@ function RegistrarReclamoModal({ open, onClose, afiliados, proveedores, onRegist
       </div>
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-        <Button variant="primary" className="flex items-center justify-center" onClick={submit}><CheckCircle2 className="w-4 h-4 mr-1"/>Guardar</Button>
+        <Button variant="primary" className="flex items-center justify-center" onClick={submit}><CheckCircle2 className="w-4 h-4 mr-1" />Guardar</Button>
       </div>
     </Modal>
   );
@@ -1221,7 +1200,7 @@ function PolizasTab({ polizas, planes }) {
             </div>
             <div>
               <label className="text-xs text-slate-600">Personas</label>
-              <Input type="number" value={personas} onChange={(v)=>setPersonas(Number(v))} />
+              <Input type="number" value={personas} onChange={(v) => setPersonas(Number(v))} />
             </div>
             <Divider className="sm:col-span-2 lg:col-span-1" />
             <div className="flex items-center justify-between sm:col-span-2 lg:col-span-1">
@@ -1243,8 +1222,8 @@ function ProveedoresTab({ proveedores }) {
     return proveedores.filter(p => (ciudad === "Todas" || p.ciudad === ciudad) && (tipo === "Todos" || p.tipo === tipo));
   }, [proveedores, ciudad, tipo]);
 
-  const ciudades = useMemo(() => ["Todas", ...Array.from(new Set<string>(proveedores.map(p=>p.ciudad)))], [proveedores]);
-  const tipos = useMemo(() => ["Todos", ...Array.from(new Set<string>(proveedores.map(p=>p.tipo)))], [proveedores]);
+  const ciudades = useMemo(() => ["Todas", ...Array.from(new Set<string>(proveedores.map(p => p.ciudad)))], [proveedores]);
+  const tipos = useMemo(() => ["Todos", ...Array.from(new Set<string>(proveedores.map(p => p.tipo)))], [proveedores]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>
@@ -1291,7 +1270,7 @@ function ServiciosTab({ servicios, afiliados, proveedores, autorizaciones, onReg
   }, [servicios, filtroProveedor, filtroEstado]);
 
   const exportar = () => {
-    const rows = [["Fecha","Afiliado","Proveedor","Descripción","Costo","Copago","Estado","Autorización"]];
+    const rows = [["Fecha", "Afiliado", "Proveedor", "Descripción", "Costo", "Copago", "Estado", "Autorización"]];
     serviciosFiltrados.forEach(s => {
       const af = afiliados.find(a => a.id === s.afiliadoId);
       const pr = proveedores.find(p => p.id === s.proveedorId);
@@ -1324,8 +1303,8 @@ function ServiciosTab({ servicios, afiliados, proveedores, autorizaciones, onReg
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={exportar} className="flex items-center"><FileDown className="w-4 h-4 mr-1"/> Exportar CSV</Button>
-          <Button variant="primary" onClick={() => setOpen(true)} className="flex items-center"><Plus className="w-4 h-4 mr-1"/> Registrar servicio</Button>
+          <Button variant="ghost" onClick={exportar} className="flex items-center"><FileDown className="w-4 h-4 mr-1" /> Exportar CSV</Button>
+          <Button variant="primary" onClick={() => setOpen(true)} className="flex items-center"><Plus className="w-4 h-4 mr-1" /> Registrar servicio</Button>
         </div>
       </div>
 
@@ -1383,7 +1362,7 @@ function RegistrarServicioModal({ open, onClose, afiliados, proveedores, autoriz
   const registrar = async () => {
     const nuevo = await onRegistrar({ afiliadoId, proveedorId, descripcion, costo, autorizacionId: autorizacionId || undefined });
     if (!nuevo) return;
-    addNotification({ id: Date.now(), type: 'success', title: 'Servicio registrado', message: `Se registró servicio para afiliado ${afiliados.find(a=>String(a.id)===afiliadoId)?.nombre}.` });
+    addNotification({ id: Date.now(), type: 'success', title: 'Servicio registrado', message: `Se registró servicio para afiliado ${afiliados.find(a => String(a.id) === afiliadoId)?.nombre}.` });
     onClose();
     return nuevo;
   };
@@ -1437,7 +1416,7 @@ function PagosTab({ servicios, pagos, proveedores, onEmitirPago, addNotification
   }, [pagos, filtroProveedor]);
 
   const exportar = () => {
-    const rows = [["Fecha","Proveedor","Servicio","Monto","Estado","Referencia","Método"]];
+    const rows = [["Fecha", "Proveedor", "Servicio", "Monto", "Estado", "Referencia", "Método"]];
     pagosFiltrados.forEach(p => {
       const pr = proveedores.find(x => x.id === p.proveedorId);
       rows.push([formatDate(p.fecha), pr?.nombre || '-', String(p.servicioId), currency(p.monto), p.estado, p.referenciaBanco, p.metodo]);
@@ -1455,8 +1434,8 @@ function PagosTab({ servicios, pagos, proveedores, onEmitirPago, addNotification
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={exportar} className="flex items-center"><FileDown className="w-4 h-4 mr-1"/> Exportar CSV</Button>
-          <Button variant="primary" onClick={() => setOpen(true)} className="flex items-center"><Wallet className="w-4 h-4 mr-1"/> Emitir pago</Button>
+          <Button variant="ghost" onClick={exportar} className="flex items-center"><FileDown className="w-4 h-4 mr-1" /> Exportar CSV</Button>
+          <Button variant="primary" onClick={() => setOpen(true)} className="flex items-center"><Wallet className="w-4 h-4 mr-1" /> Emitir pago</Button>
         </div>
       </div>
 
@@ -1511,7 +1490,7 @@ function EmitirPagoModal({ open, onClose, servicios, proveedores, onEmitirPago, 
 
   useEffect(() => {
     const s = pendientes.find(x => String(x.id) === servicioId);
-    setReferenciaBanco(s ? `ORD-${new Date().getFullYear()}-${String(s.id).padStart(4,'0')}` : "");
+    setReferenciaBanco(s ? `ORD-${new Date().getFullYear()}-${String(s.id).padStart(4, '0')}` : "");
   }, [servicioId]);
 
   const emitir = async () => {
@@ -1533,11 +1512,11 @@ function EmitirPagoModal({ open, onClose, servicios, proveedores, onEmitirPago, 
         </div>
         <div>
           <label className="text-xs text-slate-500">Proveedor</label>
-          <Input value={proveedorSel?.nombre || ''} onChange={()=>{}} readOnly />
+          <Input value={proveedorSel?.nombre || ''} onChange={() => { }} readOnly />
         </div>
         <div>
           <label className="text-xs text-slate-500">Monto</label>
-          <Input value={currency(monto)} onChange={()=>{}} readOnly />
+          <Input value={currency(monto)} onChange={() => { }} readOnly />
         </div>
         <div>
           <label className="text-xs text-slate-500">Referencia bancaria</label>
@@ -1561,7 +1540,7 @@ function EmitirPagoModal({ open, onClose, servicios, proveedores, onEmitirPago, 
   );
 }
 
-function FacturacionTab({ facturas, polizas, onGenerarMes, onRecordatorio, onRegistrarPago, onGracia, onSuspender, addNotification }) {
+function FacturacionTab({ facturas, polizas, onGenerarMes, onRecordatorio, onRegistrarPago, onGracia, onSuspender }) {
   const [filtroPeriodo, setFiltroPeriodo] = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [openPago, setOpenPago] = useState(false);
@@ -1578,7 +1557,7 @@ function FacturacionTab({ facturas, polizas, onGenerarMes, onRecordatorio, onReg
   }, [facturas, filtroPeriodo, filtroEstado]);
 
   const exportar = () => {
-    const rows = [["Periodo","Póliza","Empresa","Emisión","Vencimiento","Monto","Estado","Fecha Pago","Referencia","Recordatorio"]];
+    const rows = [["Periodo", "Póliza", "Empresa", "Emisión", "Vencimiento", "Monto", "Estado", "Fecha Pago", "Referencia", "Recordatorio"]];
     facturasFiltradas.forEach(f => {
       const p = polizas.find(x => x.id === f.polizaId);
       rows.push([f.periodo, f.polizaId, p?.empresa || '-', formatDate(f.emision), formatDate(f.vencimiento), currency(f.monto), f.estado, f.fechaPago ? formatDate(f.fechaPago) : '-', f.referencia || '-', f.recordatorioEnviado ? 'Sí' : 'No']);
@@ -1603,8 +1582,8 @@ function FacturacionTab({ facturas, polizas, onGenerarMes, onRecordatorio, onReg
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={exportar} className="flex items-center"><FileDown className="w-4 h-4 mr-1"/> Exportar CSV</Button>
-          <Button variant="primary" onClick={onGenerarMes} className="flex items-center"><RefreshCw className="w-4 h-4 mr-1"/> Generar facturas del mes</Button>
+          <Button variant="ghost" onClick={exportar} className="flex items-center"><FileDown className="w-4 h-4 mr-1" /> Exportar CSV</Button>
+          <Button variant="primary" onClick={onGenerarMes} className="flex items-center"><RefreshCw className="w-4 h-4 mr-1" /> Generar facturas del mes</Button>
         </div>
       </div>
 
@@ -1676,11 +1655,11 @@ function RegistrarPagoPrimaModal({ open, onClose, factura, onRegistrarPago }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-slate-500">Periodo</label>
-          <Input value={factura.periodo} onChange={()=>{}} readOnly />
+          <Input value={factura.periodo} onChange={() => { }} readOnly />
         </div>
         <div>
           <label className="text-xs text-slate-500">Monto</label>
-          <Input value={currency(factura.monto)} onChange={()=>{}} readOnly />
+          <Input value={currency(factura.monto)} onChange={() => { }} readOnly />
         </div>
         <div className="sm:col-span-2">
           <label className="text-xs text-slate-500">Referencia bancaria</label>

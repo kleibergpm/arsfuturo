@@ -33,4 +33,32 @@ type ValueSelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "onChange"
 export const Select = ({ value, onChange, children, className = "", ...rest }: ValueSelectProps) => <select {...rest} value={value} onChange={(event) => onChange?.(event.target.value)} className={cls("w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300", className)}>{children}</select>;
 export const Divider = ({ className = "" }: { className?: string }) => <div className={cls("h-px w-full bg-slate-200", className)} />;
 
-export const Modal = ({ open, onClose, title, children, footer = null }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; footer?: ReactNode }) => <AnimatePresence>{open && <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><div className="absolute inset-0 bg-slate-900/40" onClick={onClose} /><motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-3 sm:p-4 shadow-xl"><div className="flex items-center justify-between gap-2 sm:gap-4"><h3 className="text-base sm:text-lg font-semibold truncate">{title}</h3><button className="p-1 sm:p-2 rounded-lg hover:bg-slate-100 flex-shrink-0" onClick={onClose}><XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" /></button></div><div className="mt-3">{children}</div>{footer && <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">{footer}</div>}</motion.div></motion.div>}</AnimatePresence>;
+export const Modal = ({ open, onClose, title, children, footer = null }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; footer?: ReactNode }) => (
+  <AnimatePresence>
+    {open && (
+      <motion.div
+        className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px]" onClick={onClose} />
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 20, opacity: 0 }}
+          className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-3 sm:p-4 shadow-xl"
+        >
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <h3 className="text-base sm:text-lg font-semibold truncate">{title}</h3>
+            <button className="p-1 sm:p-2 rounded-lg hover:bg-slate-100 flex-shrink-0" onClick={onClose}>
+              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
+            </button>
+          </div>
+          <div className="mt-3">{children}</div>
+          {footer && <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">{footer}</div>}
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
