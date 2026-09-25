@@ -15,7 +15,7 @@ La implementación actual usa React, Tailwind CSS 4, Lucide React, Framer Motion
 - **Confiable:** los estados de aprobación, rechazo, pago, suspensión y error deben ser visualmente inequívocos.
 - **Humana:** usa animaciones breves y útiles para orientar cambios de estado, sin distraer.
 - **Accesible:** conserva contraste suficiente, foco visible, etiquetas de formulario y navegación usable con teclado.
-- **Responsive:** diseña primero para que las tareas críticas funcionen en pantallas pequeñas y crezcan correctamente en escritorio.
+- **Responsive:** diseña primero para que las tareas críticas funcionen en pantallas pequeñas y crezcan correctamente en escritorio, usando la escala Mobile-M y Mobile-L definida en [Breakpoints](#breakpoints).
 
 ## Identidad existente
 
@@ -28,6 +28,25 @@ Conserva la base visual actual antes de proponer una renovación:
 - Gráficos de Recharts para métricas y tendencias.
 
 Las tarjetas actuales usan bordes suaves y esquinas redondeadas. No anides tarjetas sin una razón funcional y evita convertir cada sección en un panel flotante.
+
+## Breakpoints
+
+La interfaz se adapta con tres estados declarados en el tema de Tailwind (`FrontEnd/src/index.css`) y verificados con `pnpm run build`:
+
+| Estado | Variante | Ancho mínimo | Uso típico |
+| --- | --- | --- | --- |
+| Mobile pequeño | sin prefijo | 0 px (hasta 429 px) | Teléfonos pequeños y portrait; es el diseño base. |
+| Mobile-M | `mobile-m:` | 430 px | Teléfonos grandes: Galaxy S, iPhone 15 Pro Max. |
+| Mobile-L | `mobile-l:` | 768 px | Tablets en portrait y ventanas estrechas de escritorio. |
+
+Reglas de uso:
+
+- Escribe primero el estilo sin prefijo: todo debe ser operable en Mobile pequeño.
+- Usa `mobile-m:` para lo que aparece al ganar espacio en pantallas de teléfono grandes, como labels que hoy se ocultan o columnas de KPI que pasan a dos.
+- Usa `mobile-l:` para pasar de tarjeta a tabla, de una columna a varias o para fijar anchos de lectura cómodo.
+- Para anchos mayores a 768 px sigue usando `sm:`, `md:` y `lg:`; `mobile-l:` marca el salto a tablet, no el escritorio.
+- No inventes anchos intermedios ni escribas media queries a mano: los breakpoints se agregan en `@theme` de `FrontEnd/src/index.css` y se documentan aquí.
+- Comprueba siempre los tres estados antes de entregar una vista.
 
 ## Layout y jerarquía
 
@@ -64,7 +83,7 @@ Acompaña el color con texto, icono o estado visible. Nunca comuniques una decis
 ## Tablas, formularios y datos
 
 - Las tablas deben conservar encabezados, alineación de importes y estados legibles.
-- En móvil, permite desplazamiento horizontal o transforma la fila en un resumen vertical sin perder acciones.
+- En móvil, permite desplazamiento horizontal o transforma la fila en un resumen vertical sin perder acciones; usa `mobile-l:` para devolver la tabla.
 - Formatea fechas y moneda según `es-DO` cuando el dato se presente al usuario.
 - No inventes datos de ejemplo para rellenar una vista conectada al backend.
 - Distingue entre carga, vacío, error y datos cargados.
@@ -102,7 +121,7 @@ Antes de modificar una vista:
 2. Revisa los componentes existentes y el adaptador API relacionado.
 3. Conserva nombres de payload y modelos en español según `src/api/adapters.ts`.
 4. Implementa estados de carga, vacío, error y éxito.
-5. Comprueba escritorio y móvil.
+5. Comprueba los tres estados responsive: sin prefijo, `mobile-m:` y `mobile-l:`.
 6. Ejecuta `pnpm run typecheck`, `pnpm run check` y `pnpm run build` desde `FrontEnd/`.
 
 No introduzcas dependencias visuales nuevas, colores arbitrarios, componentes duplicados o llamadas de red directas desde una vista sin una necesidad clara.

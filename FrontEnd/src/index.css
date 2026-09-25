@@ -1,6 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "tailwindcss";
 
+@theme {
+	--breakpoint-mobile-m: 430px;
+	--breakpoint-mobile-l: 768px;
+}
+
 :root {
 	font-family: "DM Sans", ui-sans-serif, sans-serif;
 	color: #142b36;

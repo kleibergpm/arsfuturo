@@ -59,10 +59,11 @@ export function AppHeader({ currentUser, onLogout }: AppHeaderProps) {
 						onClick={onLogout}
 						variant="ghost"
 						size="sm"
-						className="flex items-center gap-1.5"
+						aria-label="Cerrar sesión"
+						className="flex min-h-11 items-center gap-1.5 lg:min-h-0"
 					>
 						<LogOut className="h-4 w-4" />
-						<span className="hidden sm:inline">Salir</span>
+						<span className="hidden mobile-m:inline">Salir</span>
 					</Button>
 				</div>
 			</div>

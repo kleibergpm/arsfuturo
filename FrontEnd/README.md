@@ -120,7 +120,7 @@ FrontEnd/
 │   │   └── ui.tsx          # componentes reutilizables (Button, Card, Modal, Badge…)
 │   ├── lib/
 │   │   └── formatters.ts   # formato de moneda y fechas, exportación CSV
-│   ├── index.css           # estilos globales y tokens de Tailwind
+│   ├── index.css           # estilos globales y breakpoints de Tailwind
 │   ├── App.tsx             # shell principal de la aplicación
 │   └── main.tsx            # punto de entrada
 ├── .env.example
@@ -134,6 +134,7 @@ FrontEnd/
 
 - Las reglas de diseño están en [DESIGN.md](../DESIGN.md) y las convenciones generales en [CODING_CONVENTIONS.md](../CODING_CONVENTIONS.md).
 - Los componentes de `src/components/ui.tsx` son la base de la interfaz: reutilízalos antes de crear estilos nuevos.
+- La escala responsive está en el bloque `@theme` de `src/index.css`: el estilo base sin prefijo cubre el móvil pequeño, `mobile-m:` aplica desde 430 px y `mobile-l:` desde 768 px. Usa `sm:`, `md:` y `lg:` para anchos mayores.
 - Las decisiones de negocio (coberturas, permisos, importes, aprobaciones) siempre provienen del backend; el cliente solo las presenta.
 - Las acciones de aprobar, rechazar, pagar o suspender invocan los endpoints explícitos del backend, no actualizaciones genéricas.
 - La guía específica para agentes está en [AGENTS.md](AGENTS.md).

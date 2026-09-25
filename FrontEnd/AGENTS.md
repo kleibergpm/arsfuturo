@@ -58,6 +58,7 @@ Las variables de Vite quedan disponibles en el navegador. Nunca pongas aquí con
 - No dupliques lógica de negocio en el cliente para decisiones sensibles.
 - Las acciones de aprobar, rechazar, pagar o suspender deben invocar endpoints explícitos del backend.
 - Revisa estados responsive y accesibilidad al modificar formularios, tablas, modales o navegación.
+- Los breakpoints del tema viven en `src/index.css`: Mobile-M (`mobile-m:`, 430 px) y Mobile-L (`mobile-l:`, 768 px). Escribe primero el estilo sin prefijo para el móvil pequeño y no escribas media queries a mano.
 
 ## Integración de IA
 

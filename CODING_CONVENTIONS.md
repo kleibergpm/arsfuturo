@@ -50,6 +50,7 @@ Estas convenciones aplican a todo ARS Futuro. Las guías `AGENTS.md` de cada dir
 - Implementa estados de carga, vacío, error y éxito para flujos asíncronos.
 - No dupliques reglas de permisos o cálculos críticos del backend.
 - Usa los iconos y estilos existentes antes de introducir dependencias nuevas.
+- Aplica la escala responsive del tema: estilo base sin prefijo, `mobile-m:` desde 430 px y `mobile-l:` desde 768 px. No agregues breakpoints nuevos ni media queries manuales.
 - No guardes secretos, claves de proveedores ni datos sensibles en variables públicas de Vite.
 
 ## Pruebas

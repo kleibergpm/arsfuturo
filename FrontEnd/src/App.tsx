@@ -662,7 +662,7 @@ export default function ARS_Futuro_App() {
 		<div className="app-shell min-h-screen w-full text-[#24424d] flex flex-col">
 			<AppHeader currentUser={currentUser} onLogout={handleLogout} />
 
-			<main className="mx-auto max-w-[90rem] px-4 py-6 lg:px-8 lg:py-8 flex-1">
+			<main className="mx-auto w-full min-w-0 max-w-[90rem] px-4 py-6 lg:px-8 lg:py-8 flex-1">
 				<AppNavigation
 					tab={tab}
 					setTab={setTab}
@@ -708,7 +708,7 @@ export default function ARS_Futuro_App() {
 								initial={{ opacity: 0, y: 10 }}
 								animate={{ opacity: 1, y: 0 }}
 								exit={{ opacity: 0, y: 10 }}
-								className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+								className="grid grid-cols-1 mobile-m:grid-cols-2 lg:grid-cols-4 gap-4"
 							>
 								<Card>
 									<div className="flex items-center justify-between">
