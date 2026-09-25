@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import {
-	NotificationService,
+	type NotificationService,
 	notificationService,
 } from "../services/notifications.service.js";
 
@@ -43,12 +43,10 @@ export class BusinessController {
 		]);
 
 		if (!insured || !provider)
-			return res
-				.status(422)
-				.json({
-					error: "VALIDATION_ERROR",
-					message: "Afiliado o proveedor inexistente",
-				});
+			return res.status(422).json({
+				error: "VALIDATION_ERROR",
+				message: "Afiliado o proveedor inexistente",
+			});
 
 		const eligible =
 			insured.status === "ACTIVE" &&
@@ -118,20 +116,16 @@ export class BusinessController {
 			(authorizationId &&
 				(!authorization || authorization.status !== "APPROVED"))
 		) {
-			return res
-				.status(422)
-				.json({
-					error: "VALIDATION_ERROR",
-					message: "Servicio no elegible o autorización no aprobada",
-				});
+			return res.status(422).json({
+				error: "VALIDATION_ERROR",
+				message: "Servicio no elegible o autorización no aprobada",
+			});
 		}
-		res
-			.status(201)
-			.json(
-				await this.database.medicalService.create({
-					data: { ...req.body, copay: insured.plan.consultationCopay },
-				}),
-			);
+		res.status(201).json(
+			await this.database.medicalService.create({
+				data: { ...req.body, copay: insured.plan.consultationCopay },
+			}),
+		);
 	};
 
 	issuePayment = async (req, res) => {

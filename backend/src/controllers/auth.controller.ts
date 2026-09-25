@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { prisma } from "../lib/prisma.js";
 import { env } from "../lib/env.js";
+import { prisma } from "../lib/prisma.js";
 
 export class AuthController {
 	constructor(
@@ -13,17 +13,15 @@ export class AuthController {
 		const user = await this.database.user.findUnique({
 			where: { username: req.body.username },
 		});
-		console.log(user)
+		console.log(user);
 		if (
 			!user ||
 			!(await bcrypt.compare(req.body.password, user.passwordHash))
 		) {
-			return res
-				.status(401)
-				.json({
-					error: "INVALID_CREDENTIALS",
-					message: "Usuario o contraseña incorrectos",
-				});
+			return res.status(401).json({
+				error: "INVALID_CREDENTIALS",
+				message: "Usuario o contraseña incorrectos",
+			});
 		}
 
 		const token = jwt.sign(

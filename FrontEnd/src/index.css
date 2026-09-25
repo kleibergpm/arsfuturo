@@ -1,4 +1,97 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "tailwindcss";
+
+:root {
+	font-family: "DM Sans", ui-sans-serif, sans-serif;
+	color: #142b36;
+	background: #f4f1eb;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+}
+
+body {
+	margin: 0;
+	min-width: 320px;
+	background:
+		radial-gradient(
+			circle at 8% 2%,
+			rgba(38, 158, 154, 0.13),
+			transparent 28rem
+		),
+		radial-gradient(
+			circle at 92% 0%,
+			rgba(239, 117, 83, 0.11),
+			transparent 25rem
+		),
+		#f4f1eb;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary {
+	cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+	cursor: not-allowed;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+	outline: 3px solid rgba(38, 158, 154, 0.35);
+	outline-offset: 2px;
+}
+
+.font-display {
+	font-family: "Space Grotesk", "DM Sans", sans-serif;
+}
+
+.app-shell {
+	background-image:
+		linear-gradient(rgba(20, 43, 54, 0.025) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(20, 43, 54, 0.025) 1px, transparent 1px);
+	background-size: 32px 32px;
+}
+
+.app-surface {
+	background: rgba(255, 253, 249, 0.78);
+	border: 1px solid rgba(20, 43, 54, 0.1);
+	box-shadow: 0 18px 45px rgba(20, 43, 54, 0.07);
+	backdrop-filter: blur(16px);
+}
+
+.data-table thead tr {
+	border-bottom: 1px solid #cbd8d5;
+	color: #6d8585;
+	font-size: 0.7rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.data-table tbody tr {
+	border-bottom: 1px solid #e3ebe8;
+	transition: background-color 160ms ease;
+}
+
+.data-table tbody tr:hover {
+	background-color: rgba(238, 245, 242, 0.72);
+}
+
+.data-table th,
+.data-table td {
+	padding-top: 0.8rem;
+	padding-bottom: 0.8rem;
+}
 
 html,
 body,
