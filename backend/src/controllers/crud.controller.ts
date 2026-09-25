@@ -28,14 +28,12 @@ export class CrudController {
 	};
 
 	create = async (req, res) =>
-		res
-			.status(201)
-			.json(
-				await this.database[this.model].create({
-					data: req.body,
-					include: this.include,
-				}),
-			);
+		res.status(201).json(
+			await this.database[this.model].create({
+				data: req.body,
+				include: this.include,
+			}),
+		);
 
 	update = async (req, res) =>
 		res.json(

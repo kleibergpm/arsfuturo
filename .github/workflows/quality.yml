@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-24.04
     defaults:
       run:
-        working-directory: frontend
+        working-directory: FrontEnd
     steps:
       - uses: actions/checkout@v6
 
@@ -63,7 +63,7 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
+          cache-dependency-path: FrontEnd/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
 

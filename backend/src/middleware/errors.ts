@@ -7,17 +7,15 @@ export function notFound(req, res) {
 
 export function errorHandler(err, req, res, next) {
 	console.error(err);
-	if (res.headersSent) return next(err)
+	if (res.headersSent) return next(err);
 	if (
 		err instanceof Prisma.PrismaClientKnownRequestError &&
 		err.code === "P2002"
 	)
-		return res
-			.status(409)
-			.json({
-				error: "CONFLICT",
-				message: "Ya existe un registro con ese valor único",
-			});
+		return res.status(409).json({
+			error: "CONFLICT",
+			message: "Ya existe un registro con ese valor único",
+		});
 	if (
 		err instanceof Prisma.PrismaClientKnownRequestError &&
 		err.code === "P2025"

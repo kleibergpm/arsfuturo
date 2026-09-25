@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import { authenticate, allow } from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
-import { asyncHandler } from "../middleware/errors.js";
 import { authController } from "../controllers/auth.controller.js";
-import { crud } from "../controllers/crud.controller.js";
 import { businessController } from "../controllers/business.controller.js";
+import { crud } from "../controllers/crud.controller.js";
+import { allow, authenticate } from "../middleware/auth.js";
+import { asyncHandler } from "../middleware/errors.js";
+import { validate } from "../middleware/validate.js";
+
 const r = Router();
 const id = z.string().uuid();
 const uuid = z.object({ id });
@@ -121,14 +122,7 @@ const resource = (
 		asyncHandler(c.remove),
 	);
 };
-resource(
-	"/planes",
-	"plan",
-	schemas.plan,
-	undefined,
-	roles.staff,
-	stringId,
-);
+resource("/planes", "plan", schemas.plan, undefined, roles.staff, stringId);
 resource("/proveedores", "provider", schemas.provider, undefined, roles.staff);
 resource(
 	"/polizas",

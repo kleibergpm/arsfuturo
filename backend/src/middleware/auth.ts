@@ -21,9 +21,7 @@ export const allow =
 	(req, res, next) =>
 		roles.includes(req.user.role)
 			? next()
-			: res
-					.status(403)
-					.json({
-						error: "FORBIDDEN",
-						message: "No tienes permisos para esta acción",
-					});
+			: res.status(403).json({
+					error: "FORBIDDEN",
+					message: "No tienes permisos para esta acción",
+				});

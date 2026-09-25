@@ -7,10 +7,12 @@
   "packageManager": "pnpm@10.20.0",
   "scripts": {
     "prepare": "husky",
-    "install:all": "pnpm -C backend install && pnpm -C backend prisma:generate && pnpm -C frontend install",
-    "dev:all": "pnpm -C backend dev && pnpm -C frontend dev",
-    "check": "pnpm -C backend check && pnpm -C frontend check",
-    "typecheck": "pnpm -C backend typecheck && pnpm -C frontend typecheck",
+    "changelog": "node scripts/generate-changelog.mjs",
+    "mcp:frontend-design": "corepack pnpm -C mcp/frontend-design start",
+    "install:all": "pnpm -C backend install && pnpm -C FrontEnd install && pnpm -C backend prisma:generate",
+    "dev:all": "node scripts/dev-all.mjs",
+    "check": "pnpm -C backend check && pnpm -C FrontEnd check",
+    "typecheck": "pnpm -C backend typecheck && pnpm -C FrontEnd typecheck",
     "precommit": "pnpm check && pnpm typecheck"
   },
   "devDependencies": {

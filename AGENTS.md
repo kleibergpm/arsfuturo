@@ -1,36 +1,49 @@
-# ARS Futuro Agent Guide
+# Guía de agentes de ARS Futuro
 
-## Package manager
+## Gestor de paquetes
 
-- Use `pnpm` exclusively. Do not run `npm`, `npx`, or update either `package-lock.json`.
-- This is not a root workspace: run package commands from `backend/` or `frontend/`, which each have an independent `pnpm-lock.yaml`.
+- Usa exclusivamente `pnpm`. No ejecutes `npm`, `npx` ni actualices archivos `package-lock.json`.
+- El repositorio no es un workspace raíz: ejecuta los comandos desde `backend/` o `FrontEnd/`, cada uno con su propio `pnpm-lock.yaml`.
 
-## Project layout
+## Estructura del proyecto
 
-- `backend/` is the Express 5 API. `src/app.ts` wires middleware and mounts `src/routes/index.ts` at `/api`; `src/server.ts` starts the listener.
-- `backend/prisma/schema.prisma` is the PostgreSQL data model. The API uses Prisma and Zod request validation in the route module.
-- `frontend/` is a Vite React client. `src/App.tsx` is the current application shell; `src/api/client.ts` owns HTTP calls, token injection, and `VITE_API_URL` (default: `http://localhost:4000/api`).
+- `backend/` contiene la API de Express 5. `src/app.ts` configura el middleware y monta `src/routes/index.ts` en `/api`; `src/server.ts` inicia el servidor.
+- `backend/prisma/schema.prisma` define el modelo de datos de PostgreSQL. La API usa Prisma y validación de solicitudes con Zod en el módulo de rutas.
+- `FrontEnd/` contiene el cliente React con Vite. `src/App.tsx` es el shell actual de la aplicación; `src/api/client.ts` concentra las peticiones HTTP, la inyección del token y `VITE_API_URL` (por defecto: `http://localhost:4000/api`).
 
-## Commands
+## Comandos
 
-- Backend install and checks: `cd backend && pnpm install && pnpm run typecheck && pnpm test`.
-- Run one backend test: `cd backend && pnpm exec vitest run tests/auth.test.ts`.
-- Backend formatting/linting has no package script: `cd backend && pnpm exec biome check src tests prisma` (append `--write` only when intentionally applying fixes).
-- Start the API: `cd backend && pnpm run dev`. It serves `/health`, `/api`, and `/api/docs` on port `4000` by default.
-- Frontend install/build: `cd frontend && pnpm install && pnpm run build`.
-- Frontend formatting/linting has no package script: `cd frontend && pnpm exec biome check src`.
-- Start the client: `cd frontend && pnpm run dev` (Vite default port `5173`). Set `VITE_API_URL` in `frontend/.env` when the API is elsewhere.
+- Regenerar el changelog desde la raíz: `pnpm run changelog`.
+- Ejecutar el MCP de diseño frontend: `pnpm run mcp:frontend-design`.
+- Instalar y comprobar el backend: `cd backend && pnpm install && pnpm run typecheck && pnpm test`.
+- Ejecutar una prueba del backend: `cd backend && pnpm exec vitest run tests/auth.test.ts`.
+- Formatear y revisar el backend: `cd backend && pnpm exec biome check src tests prisma` (añade `--write` solo cuando quieras aplicar correcciones).
+- Iniciar la API: `cd backend && pnpm run dev`. Sirve `/health`, `/api` y `/api/docs` en el puerto `4000` por defecto.
+- Instalar y compilar el frontend: `cd FrontEnd && pnpm install && pnpm run build`.
+- Revisar el frontend: `cd FrontEnd && pnpm exec biome check src`.
+- Iniciar el cliente: `cd FrontEnd && pnpm run dev` (puerto `5173` por defecto). Define `VITE_API_URL` en `FrontEnd/.env` si la API está en otra dirección.
 
-## Database and environment
+## Base de datos y entorno
 
-- Backend startup requires `DATABASE_URL` and `JWT_SECRET` outside `NODE_ENV=test`; copy `backend/.env.example` to `backend/.env` and configure PostgreSQL first.
-- After changing `backend/prisma/schema.prisma`, run `cd backend && pnpm run prisma:generate`.
-- There are no committed Prisma migrations. Initialize local Prisma-managed tables with `cd backend && pnpm exec prisma db push`, then seed with `pnpm run prisma:seed`.
-- Do not combine `prisma db push` with the manual scripts in `backend/sql/` on the same initialized database.
+- Fuera de `NODE_ENV=test`, el backend requiere `DATABASE_URL` y `JWT_SECRET`; copia `backend/.env.example` a `backend/.env` y configura PostgreSQL primero.
+- `SHADOW_DATABASE_URL` es opcional para generar Prisma y usar `prisma db push`; configúrala si vas a usar una base shadow dedicada con `prisma migrate dev`.
+- Después de cambiar `backend/prisma/schema.prisma`, ejecuta `cd backend && pnpm run prisma:generate`.
+- Para inicializar las tablas administradas por Prisma, ejecuta `cd backend && pnpm exec prisma db push` y luego `pnpm run prisma:seed`.
+- No combines `prisma db push` con los scripts manuales de `backend/sql/` sobre la misma base ya inicializada.
 
-## Conventions and integration
+## Convenciones e integración
 
-- Biome is configured in each package: tabs and double quotes, recommended lint rules, and import organization. Use its output rather than introducing another formatter or linter.
-- Backend source is ESM (`type: module` and `NodeNext`), so local TypeScript imports use `.js` specifiers.
-- Keep frontend payload keys and Spanish-facing models aligned through `frontend/src/api/adapters.ts`; do not bypass the API client when adding an API-backed UI flow.
-- K6 suites in `backend/k6/` require a running API plus seeded credentials. Run them with `cd backend && k6 run k6/auth-smoke.js` (or the other suite files).
+- Usa mensajes de commit con formato Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`) para que `pnpm run changelog` pueda agrupar los cambios automáticamente.
+- Biome está configurado en cada paquete: tabulaciones, comillas dobles, reglas recomendadas y organización de imports. Usa su salida en lugar de introducir otro formateador o linter.
+- El backend usa ESM (`type: module` y `NodeNext`), por lo que los imports locales de TypeScript usan especificadores `.js`.
+- Mantén alineadas las claves del payload y los modelos en español mediante `FrontEnd/src/api/adapters.ts`; no evadas el cliente API al añadir flujos conectados al backend.
+- Las suites de K6 en `backend/k6/` requieren una API activa y credenciales sembradas. Ejecútalas con `cd backend && k6 run k6/auth-smoke.js` (o con los demás archivos de la suite).
+
+## Integración de IA
+
+- La IA debe integrarse detrás del backend; nunca expongas claves de proveedores en `FrontEnd/`.
+- Todo endpoint de IA debe reutilizar `authenticate`, `allow` y `validate`.
+- Comienza con funciones asistivas y de solo lectura. Las decisiones sobre autorizaciones, reclamos o pagos deben seguir requiriendo aprobación humana.
+- Registra usuario, propósito, entrada resumida, proveedor, modelo, versión de prompt, resultado y revisión humana sin almacenar datos sensibles innecesarios.
+- Usa adaptadores de proveedor para evitar acoplar la lógica de negocio a un SDK específico y permite sustituir el proveedor sin cambiar la interfaz.
+- El MCP de diseño frontend es local, de solo lectura y no debe recibir secretos ni datos de producción.

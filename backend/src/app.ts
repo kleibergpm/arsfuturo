@@ -1,12 +1,11 @@
-import express from "express";
 import cors from "cors";
+import express from "express";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
-import routes from "./routes/index.js";
 import { env } from "./lib/env.js";
-import { errorHandler, notFound } from "./middleware/errors.js";
 import { swaggerSpec } from "./lib/swagger.js";
-
+import { errorHandler, notFound } from "./middleware/errors.js";
+import routes from "./routes/index.js";
 
 const app = express();
 app.use(helmet());
