@@ -58,6 +58,11 @@ Las variables de Vite quedan disponibles en el navegador. Nunca pongas aquí con
 - No dupliques lógica de negocio en el cliente para decisiones sensibles.
 - Las acciones de aprobar, rechazar, pagar o suspender deben invocar endpoints explícitos del backend.
 - Revisa estados responsive y accesibilidad al modificar formularios, tablas, modales o navegación.
+- Los breakpoints del tema viven en `src/index.css`: Mobile-M (`mobile-m:`, 430 px) y Mobile-L (`mobile-l:`, 768 px). Escribe primero el estilo sin prefijo para el móvil pequeño y no escribas media queries a mano.
+- No escribas colores literales en componentes. Consume los tokens de `src/index.css` (`--text`, `--bg`, `--surface-solid`, `--border`, `--accent`, `--ok`, `--warn`, `--danger`) o las clases `.tone-*` y `.tone-notif-*`.
+- Hay dos temas: claro (por defecto) y negro (teal profundo). Ambos se aplican con `data-theme` en `<html>`, se alternan desde el toggle de la cabecera y se persisten en `localStorage` con la clave `arsfuturo_tema`.
+- En el tema negro el acento es un teal brillante y los estados conservan su color; no aplanes los tokens a grises ni a blanco y negro puros.
+- Si tocas un componente que usa Recharts, propaga `tema` y usa `graficaDe(tema)`; los gráficos no heredan tokens CSS.
 
 ## Integración de IA
 
