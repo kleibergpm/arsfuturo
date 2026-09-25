@@ -5,8 +5,10 @@ import {
 	HeartPulse,
 	Home,
 	LogOut,
+	Moon,
 	RefreshCw,
 	Stethoscope,
+	Sun,
 	User,
 	Users,
 	Wallet,
@@ -17,14 +19,25 @@ import { Badge, Button, cls } from "./ui";
 type UserSummary = { nombre?: string; rol?: string } | null;
 type Icon = ComponentType<{ className?: string }>;
 type NavigationItem = { id: string; label: string; icon: Icon };
+type Tema = "claro" | "oscuro";
 
-type AppHeaderProps = { currentUser: UserSummary; onLogout: () => void };
-export function AppHeader({ currentUser, onLogout }: AppHeaderProps) {
+type AppHeaderProps = {
+	currentUser: UserSummary;
+	onLogout: () => void;
+	tema: Tema;
+	onToggleTema: () => void;
+};
+export function AppHeader({
+	currentUser,
+	onLogout,
+	tema,
+	onToggleTema,
+}: AppHeaderProps) {
 	return (
-		<header className="sticky top-0 z-40 border-b border-[#d7e1de]/80 bg-[#f4f1eb]/85 backdrop-blur-xl">
+		<header className="sticky top-0 z-40 border-b border-[var(--border-soft)]/80 bg-[var(--bg)]/85 backdrop-blur-xl">
 			<div className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-4 py-3 lg:px-8">
 				<div className="flex min-w-0 items-center gap-3">
-					<div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[#176b70] shadow-[0_8px_20px_rgba(23,107,112,0.2)]">
+					<div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--accent)] shadow-[0_8px_20px_var(--accent-glow)]">
 						<img
 							src="/logo_ars.png"
 							alt="ARS Futuro"
@@ -33,28 +46,45 @@ export function AppHeader({ currentUser, onLogout }: AppHeaderProps) {
 					</div>
 					<div className="min-w-0">
 						<div className="flex items-center gap-2">
-							<h1 className="font-display truncate text-lg font-bold tracking-[-0.03em] text-[#142b36] sm:text-xl">
+							<h1 className="font-display truncate text-lg font-bold tracking-[-0.03em] text-[var(--text)] sm:text-xl">
 								ARS Futuro
 							</h1>
 							<Badge color="blue">v2.0</Badge>
 						</div>
-						<p className="hidden truncate text-xs text-[#6d8585] sm:block">
+						<p className="hidden truncate text-xs text-[var(--text-muted)] sm:block">
 							Operaciones de salud, con claridad
 						</p>
 					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
-					<div className="hidden items-center gap-2 rounded-xl border border-[#cbd8d5] bg-white/60 px-3 py-2 sm:flex">
-						<User className="h-4 w-4 text-[#176b70]" />
+					<div className="hidden items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-veil)] px-3 py-2 sm:flex">
+						<User className="h-4 w-4 text-[var(--accent)]" />
 						<div className="leading-tight">
-							<p className="text-sm font-semibold text-[#24424d]">
+							<p className="text-sm font-semibold text-[var(--text-body)]">
 								{currentUser?.nombre}
 							</p>
-							<p className="text-[10px] uppercase tracking-[0.12em] text-[#78908f]">
+							<p className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-faint)]">
 								{currentUser?.rol}
 							</p>
 						</div>
 					</div>
+					<Button
+						onClick={onToggleTema}
+						variant="ghost"
+						size="sm"
+						aria-label={
+							tema === "claro" ? "Activar tema negro" : "Activar tema blanco"
+						}
+						aria-pressed={tema === "oscuro"}
+						title={tema === "claro" ? "Tema negro" : "Tema blanco"}
+						className="flex min-h-11 w-11 items-center justify-center lg:min-h-0"
+					>
+						{tema === "claro" ? (
+							<Moon className="h-4 w-4" />
+						) : (
+							<Sun className="h-4 w-4" />
+						)}
+					</Button>
 					<Button
 						onClick={onLogout}
 						variant="ghost"
@@ -97,7 +127,7 @@ export function AppNavigation({ tab, setTab, isAdmin }: AppNavigationProps) {
 			aria-label="Secciones principales"
 			className="mb-7 overflow-x-auto pb-1"
 		>
-			<div className="flex min-w-max gap-1 rounded-2xl border border-[#d7e1de] bg-white/55 p-1 shadow-sm">
+			<div className="flex min-w-max gap-1 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-veil)] p-1 shadow-sm">
 				{items.map(({ id, icon: Icon, label }) => (
 					<button
 						key={id}
@@ -107,8 +137,8 @@ export function AppNavigation({ tab, setTab, isAdmin }: AppNavigationProps) {
 						className={cls(
 							"flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
 							tab === id
-								? "bg-[#176b70] text-white shadow-md shadow-[#176b70]/20"
-								: "text-[#587173] hover:bg-white hover:text-[#176b70]",
+								? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent-glow)]"
+								: "text-[var(--text-nav)] hover:bg-[var(--surface-solid)] hover:text-[var(--accent)]",
 						)}
 					>
 						<Icon className="h-4 w-4" />

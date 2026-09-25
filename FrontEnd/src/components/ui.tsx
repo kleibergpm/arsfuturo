@@ -34,11 +34,15 @@ export const Button = ({
 }: ButtonProps) => {
 	const variants = {
 		primary:
-			"bg-[#176b70] hover:bg-[#12585c] text-white shadow-[0_8px_18px_rgba(23,107,112,0.2)]",
-		ghost: "bg-white/60 hover:bg-white text-[#24424d] border border-[#cbd8d5]",
-		success: "bg-[#23856f] hover:bg-[#1b6e5d] text-white",
-		danger: "bg-[#c95c4e] hover:bg-[#ad493d] text-white",
-		warning: "bg-[#c47b2b] hover:bg-[#a96622] text-white",
+			"bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] shadow-[0_8px_18px_var(--accent-glow)]",
+		ghost:
+			"bg-[var(--surface-veil)] hover:bg-[var(--surface-solid)] text-[var(--text-body)] border border-[var(--border)]",
+		success:
+			"bg-[var(--ok)] hover:bg-[var(--ok-hover)] text-[var(--accent-ink)]",
+		danger:
+			"bg-[var(--danger)] hover:bg-[var(--danger-hover)] text-[var(--accent-ink)]",
+		warning:
+			"bg-[var(--warn)] hover:bg-[var(--warn-hover)] text-[var(--accent-ink)]",
 	};
 	const sizes = {
 		sm: "px-3 py-1.5 text-sm",
@@ -101,18 +105,18 @@ function NotificationCard({
 	const { id, message, type, title } = notification;
 	const icon =
 		type === "success" ? (
-			<CheckCircle2 className="w-5 h-5 text-green-600" />
+			<CheckCircle2 className="w-5 h-5 text-[var(--tone-notif-ok-ink)]" />
 		) : type === "error" ? (
-			<XCircle className="w-5 h-5 text-red-600" />
+			<XCircle className="w-5 h-5 text-[var(--tone-notif-error-ink)]" />
 		) : (
-			<Bell className="w-5 h-5 text-blue-600" />
+			<Bell className="w-5 h-5 text-[var(--tone-notif-info-ink)]" />
 		);
 	const background =
 		type === "success"
-			? "bg-green-50 border-green-200"
+			? "tone-notif-ok"
 			: type === "error"
-				? "bg-red-50 border-red-200"
-				: "bg-blue-50 border-blue-200";
+				? "tone-notif-error"
+				: "tone-notif-info";
 	return (
 		<motion.div
 			initial={{ opacity: 0, x: 24 }}
@@ -125,15 +129,19 @@ function NotificationCard({
 				<div className="flex-shrink-0 mt-0.5">{icon}</div>
 				<div className="flex-1 min-w-0">
 					{title && (
-						<p className="text-sm font-semibold text-slate-900 mb-1">{title}</p>
+						<p className="text-sm font-semibold text-[var(--text)] mb-1">
+							{title}
+						</p>
 					)}
-					<p className="text-sm text-slate-700 leading-relaxed">{message}</p>
+					<p className="text-sm text-[var(--text-body)] leading-relaxed">
+						{message}
+					</p>
 				</div>
 				<button
 					type="button"
 					aria-label="Cerrar notificación"
 					onClick={() => onRemove(id)}
-					className="flex-shrink-0 ml-2 text-slate-400 hover:text-slate-600 transition-colors"
+					className="flex-shrink-0 ml-2 text-[var(--text-faint)] hover:text-[var(--text-body)] transition-colors"
 				>
 					<X className="w-4 h-4" />
 				</button>
@@ -154,11 +162,11 @@ export const Badge = ({
 	<span
 		className={cls(
 			"px-2 py-0.5 rounded-full text-xs font-medium border",
-			color === "green" && "bg-emerald-50 text-emerald-700 border-emerald-200",
-			color === "red" && "bg-rose-50 text-rose-700 border-rose-200",
-			color === "amber" && "bg-amber-50 text-amber-700 border-amber-200",
-			color === "blue" && "bg-sky-50 text-sky-700 border-sky-200",
-			color === "slate" && "bg-slate-50 text-slate-700 border-slate-200",
+			color === "green" && "tone-ok",
+			color === "red" && "tone-error",
+			color === "amber" && "tone-warn",
+			color === "blue" && "tone-info",
+			color === "slate" && "tone-neutral",
 			className,
 		)}
 	>
@@ -185,7 +193,7 @@ export const Input = ({
 		onChange={(event) => onChange?.(event.target.value)}
 		placeholder={placeholder}
 		className={cls(
-			"w-full rounded-xl border border-[#cbd8d5] bg-white/70 px-3 py-2.5 text-[#24424d] placeholder:text-[#7d9394] outline-none transition focus:border-[#269e9a] focus:ring-2 focus:ring-[#269e9a]/20",
+			"w-full rounded-xl border border-[var(--border)] bg-[var(--surface-solid)]/70 px-3 py-2.5 text-[var(--text-body)] placeholder:text-[var(--text-placeholder)] outline-none transition focus:border-[var(--accent-soft)] focus:ring-2 focus:ring-[var(--accent-soft)]/20",
 			className,
 		)}
 	/>
@@ -206,7 +214,7 @@ export const Select = ({
 		value={value}
 		onChange={(event) => onChange?.(event.target.value)}
 		className={cls(
-			"w-full rounded-xl border border-[#cbd8d5] bg-white/70 px-3 py-2.5 text-[#24424d] outline-none transition focus:border-[#269e9a] focus:ring-2 focus:ring-[#269e9a]/20",
+			"w-full rounded-xl border border-[var(--border)] bg-[var(--surface-solid)]/70 px-3 py-2.5 text-[var(--text-body)] outline-none transition focus:border-[var(--accent-soft)] focus:ring-2 focus:ring-[var(--accent-soft)]/20",
 			className,
 		)}
 	>
@@ -214,7 +222,7 @@ export const Select = ({
 	</select>
 );
 export const Divider = ({ className = "" }: { className?: string }) => (
-	<div className={cls("h-px w-full bg-[#d7e1de]", className)} />
+	<div className={cls("h-px w-full bg-[var(--border-soft)]", className)} />
 );
 
 export const Modal = ({
@@ -242,14 +250,14 @@ export const Modal = ({
 					<button
 						type="button"
 						aria-label="Cerrar ventana"
-						className="absolute inset-0 h-full w-full cursor-pointer bg-slate-900/40 backdrop-blur-[1px]"
+						className="absolute inset-0 h-full w-full cursor-pointer bg-[var(--overlay)] backdrop-blur-[1px]"
 						onClick={onClose}
 					/>
 					<motion.div
 						initial={{ y: 20, opacity: 0 }}
 						animate={{ y: 0, opacity: 1 }}
 						exit={{ y: 20, opacity: 0 }}
-						className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[1.35rem] bg-[#fffdf9] p-3 sm:p-5 shadow-2xl"
+						className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[1.35rem] bg-[var(--surface-solid)] p-3 sm:p-5 shadow-2xl"
 					>
 						<div className="flex items-center justify-between gap-2 sm:gap-4">
 							<h3 className="text-base sm:text-lg font-semibold truncate">
@@ -258,10 +266,10 @@ export const Modal = ({
 							<button
 								type="button"
 								aria-label="Cerrar ventana"
-								className="p-1 sm:p-2 rounded-lg hover:bg-slate-100 flex-shrink-0"
+								className="p-1 sm:p-2 rounded-lg hover:bg-[var(--hover-veil)] flex-shrink-0"
 								onClick={onClose}
 							>
-								<XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
+								<XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-muted)]" />
 							</button>
 						</div>
 						<div className="mt-3">{children}</div>

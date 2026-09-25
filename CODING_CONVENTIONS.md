@@ -52,6 +52,7 @@ Estas convenciones aplican a todo ARS Futuro. Las guías `AGENTS.md` de cada dir
 - Usa los iconos y estilos existentes antes de introducir dependencias nuevas.
 - Aplica la escala responsive del tema: estilo base sin prefijo, `mobile-m:` desde 430 px y `mobile-l:` desde 768 px. No agregues breakpoints nuevos ni media queries manuales.
 - No guardes secretos, claves de proveedores ni datos sensibles en variables públicas de Vite.
+- Usa los tokens de color de `FrontEnd/src/index.css` en lugar de literales. Cada tema define su propia escala en `:root` y en `[data-theme="oscuro"]`; los estados mantienen su color semántico en ambos.
 
 ## Pruebas
 

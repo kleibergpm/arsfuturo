@@ -60,7 +60,7 @@ Reglas de uso:
 
 ## Color y estados
 
-Usa color como señal semántica, no como decoración:
+Usa color como señal semántica, no como decoración. En el tema claro:
 
 - Azul: acción primaria, información o navegación.
 - Verde: éxito, activo o aprobado.
@@ -69,6 +69,20 @@ Usa color como señal semántica, no como decoración:
 - Gris: contenido secundario, inactivo o neutral.
 
 Acompaña el color con texto, icono o estado visible. Nunca comuniques una decisión importante únicamente con color.
+
+## Temas
+
+La aplicación tiene dos temas y ambos se definen únicamente con tokens semánticos de `src/index.css`. No escribas colores literales en los componentes.
+
+- **Claro (por defecto)**: conserva la identidad actual sobre fondo marfil y acentos de color.
+- **Negro**: teal profundo. Fondo `#0b1214` y superficies verde-azuladas, nunca negro puro. Mantiene el acento de marca en un teal brillante (`#2dd4bf`) porque sobre fondo oscuro el tono oscuro no alcanza contraste, y recupera el color de los estados (`ok` verde, `warn` ámbar, `danger` rojo, `info` azul).
+
+Reglas:
+
+- El tema activo se marca con `data-theme="claro|oscuro"` en `<html>` y se cambia desde el toggle de la cabecera.
+- La preferencia se persiste en `localStorage` con la clave `arsfuturo_tema`; no sigas `prefers-color-scheme` porque el claro es el valor inicial del producto.
+- Cambia un color solo en `:root` o en `[data-theme="oscuro"]`; los componentes consumen `var(--text)`, `var(--bg)`, `var(--surface-solid)`, `var(--border)`, `var(--accent)`, `var(--ok)`, `var(--warn)`, `var(--danger)` y las clases `.tone-*` / `.tone-notif-*`.
+- Recharts no hereda tokens: usa `graficaDe(tema)` en `App.tsx` para dar tinta, rejilla, series, sectores y tooltip explícitos en el tema negro.
 
 ## Componentes y controles
 

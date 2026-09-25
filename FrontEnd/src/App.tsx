@@ -22,6 +22,7 @@ import {
 	Bar,
 	BarChart,
 	CartesianGrid,
+	Cell,
 	Legend,
 	Line,
 	LineChart,
@@ -69,6 +70,27 @@ type NotificationInput =
 	| string
 	| { id?: number; message: string; type?: string; title?: string };
 
+export type Tema = "claro" | "oscuro";
+
+export const TEMA_KEY = "arsfuturo_tema";
+
+// Recharts no hereda los tokens del tema: hay que darle tinta, rejilla,
+// series y tooltip explícitos para que no aparezcan los colores por defecto.
+const GRAFICA_OSCURO = {
+	eje: { fill: "#8ba3a3", fontSize: 12 },
+	linea: "#203338",
+	serie: "#2dd4bf",
+	sectores: ["#2dd4bf", "#f87171"],
+	tooltip: {
+		backgroundColor: "#16272b",
+		border: "1px solid #2a4247",
+		borderRadius: "0.75rem",
+		color: "#e8f1f0",
+	},
+};
+
+const graficaDe = (tema: Tema) => (tema === "oscuro" ? GRAFICA_OSCURO : null);
+
 // La cobertura por procedimiento ahora la decide solo el backend (createAuthorization);
 // esto es un simple lookup de presentación, no una regla de negocio.
 const getPlanById = (plans, planId) =>
@@ -102,6 +124,25 @@ export default function ARS_Futuro_App() {
 	const [q] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [openNuevoAfiliado, setOpenNuevoAfiliado] = useState(false);
+
+	// Estado del tema visual
+	const [tema, setTema] = useState<Tema>(() => {
+		const guardado = localStorage.getItem(TEMA_KEY);
+		return guardado === "oscuro" || guardado === "claro" ? guardado : "claro";
+	});
+
+	useEffect(() => {
+		document.documentElement.dataset.theme = tema;
+		localStorage.setItem(TEMA_KEY, tema);
+	}, [tema]);
+
+	const toggleTema = useCallback(() => {
+		setTema((prev) => (prev === "claro" ? "oscuro" : "claro"));
+	}, []);
+
+	// Los gráficos de Recharts traen su propia paleta: en el tema negro hay que
+	// explicitar tinta, rejilla y series para que no queden azul y gris claro.
+	const g = graficaDe(tema);
 
 	// Estado para notificaciones
 	const [notifications, setNotifications] = useState([]);
@@ -571,31 +612,33 @@ export default function ARS_Futuro_App() {
 	if (!isAuthenticated) {
 		return (
 			<div className="app-shell min-h-screen w-full px-4 flex items-center justify-center">
-				<Card className="w-full max-w-md !border-[#cbd8d5] !bg-[#fffdf9]/90 p-7 sm:p-9">
+				<Card className="w-full max-w-md !border-[var(--border)] !bg-[var(--surface-solid)]/90 p-7 sm:p-9">
 					<div className="text-center mb-8">
-						<div className="mx-auto mb-5 grid h-16 w-16 place-items-center overflow-hidden rounded-2xl bg-[#176b70] shadow-[0_12px_24px_rgba(23,107,112,0.2)]">
+						<div className="mx-auto mb-5 grid h-16 w-16 place-items-center overflow-hidden rounded-2xl bg-[var(--accent)] shadow-[0_12px_24px_var(--accent-glow)]">
 							<img
 								src="/logo_ars.png"
 								alt="ARS Futuro Logo"
 								className="w-full h-full object-contain"
 							/>
 						</div>
-						<h1 className="font-display text-3xl font-bold tracking-[-0.04em] text-[#142b36] mb-2">
+						<h1 className="font-display text-3xl font-bold tracking-[-0.04em] text-[var(--text)] mb-2">
 							ARS Futuro
 						</h1>
-						<p className="text-[#6d8585]">Tu operación de salud, más clara.</p>
+						<p className="text-[var(--text-muted)]">
+							Tu operación de salud, más clara.
+						</p>
 					</div>
 
 					<form onSubmit={handleLogin} className="space-y-4">
 						<div>
 							<label
-								className="mb-1 block text-sm font-semibold text-[#24424d]"
+								className="mb-1 block text-sm font-semibold text-[var(--text-body)]"
 								htmlFor="login-usuario"
 							>
 								Usuario
 							</label>
 							<div className="relative">
-								<User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+								<User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
 								<Input
 									id="login-usuario"
 									value={loginForm.usuario}
@@ -611,13 +654,13 @@ export default function ARS_Futuro_App() {
 
 						<div>
 							<label
-								className="mb-1 block text-sm font-semibold text-[#24424d]"
+								className="mb-1 block text-sm font-semibold text-[var(--text-body)]"
 								htmlFor="login-contrasena"
 							>
 								Contraseña
 							</label>
 							<div className="relative">
-								<Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+								<Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
 								<Input
 									id="login-contrasena"
 									type="password"
@@ -633,7 +676,7 @@ export default function ARS_Futuro_App() {
 						</div>
 
 						{loginError && (
-							<div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-sm text-rose-700">
+							<div className="rounded-xl border tone-error p-3 text-center text-sm">
 								{loginError}
 							</div>
 						)}
@@ -643,11 +686,11 @@ export default function ARS_Futuro_App() {
 						</Button>
 					</form>
 
-					<div className="mt-6 rounded-xl border border-[#d7e1de] bg-[#eef5f2] p-4">
-						<p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#527171]">
+					<div className="mt-6 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-sunken)] p-4">
+						<p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-accent-soft)]">
 							Acceso de demostración
 						</p>
-						<div className="space-y-1 text-xs text-[#6d8585]">
+						<div className="space-y-1 text-xs text-[var(--text-muted)]">
 							<div>• admin / admin123 (Administrador)</div>
 							<div>• agente / agente123 (Agente ARS)</div>
 							<div>• supervisor / super123 (Supervisor)</div>
@@ -659,8 +702,13 @@ export default function ARS_Futuro_App() {
 	}
 
 	return (
-		<div className="app-shell min-h-screen w-full text-[#24424d] flex flex-col">
-			<AppHeader currentUser={currentUser} onLogout={handleLogout} />
+		<div className="app-shell min-h-screen w-full text-[var(--text-body)] flex flex-col">
+			<AppHeader
+				currentUser={currentUser}
+				onLogout={handleLogout}
+				tema={tema}
+				onToggleTema={toggleTema}
+			/>
 
 			<main className="mx-auto w-full min-w-0 max-w-[90rem] px-4 py-6 lg:px-8 lg:py-8 flex-1">
 				<AppNavigation
@@ -671,10 +719,10 @@ export default function ARS_Futuro_App() {
 
 				<div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
 					<div>
-						<p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-[#269e9a]">
+						<p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-[var(--accent-soft)]">
 							Panel de operaciones
 						</p>
-						<h2 className="font-display text-3xl font-bold tracking-[-0.04em] text-[#142b36]">
+						<h2 className="font-display text-3xl font-bold tracking-[-0.04em] text-[var(--text)]">
 							{
 								{
 									dashboard: "Resumen general",
@@ -690,13 +738,13 @@ export default function ARS_Futuro_App() {
 							}
 						</h2>
 					</div>
-					<p className="max-w-sm text-sm leading-6 text-[#6d8585]">
+					<p className="max-w-sm text-sm leading-6 text-[var(--text-muted)]">
 						Información operativa para tomar decisiones con confianza.
 					</p>
 				</div>
 
 				{loading ? (
-					<div className="flex items-center justify-center py-24 text-slate-500">
+					<div className="flex items-center justify-center py-24 text-[var(--text-muted)]">
 						<Loader2 className="w-5 h-5 mr-2 animate-spin" />
 						Cargando…
 					</div>
@@ -713,47 +761,47 @@ export default function ARS_Futuro_App() {
 								<Card>
 									<div className="flex items-center justify-between">
 										<div>
-											<p className="text-xs text-slate-500">
+											<p className="text-xs text-[var(--text-muted)]">
 												Asegurados activos
 											</p>
 											<p className="text-2xl font-semibold">{kpis.activos}</p>
 										</div>
-										<Users className="w-8 h-8 text-sky-600" />
+										<Users className="w-8 h-8 text-[var(--icon-info)]" />
 									</div>
 								</Card>
 								<Card>
 									<div className="flex items-center justify-between">
 										<div>
-											<p className="text-xs text-slate-500">
+											<p className="text-xs text-[var(--text-muted)]">
 												Reclamaciones en revisión
 											</p>
 											<p className="text-2xl font-semibold">{kpis.pendRecl}</p>
 										</div>
-										<FileText className="w-8 h-8 text-amber-600" />
+										<FileText className="w-8 h-8 text-[var(--icon-warn)]" />
 									</div>
 								</Card>
 								<Card>
 									<div className="flex items-center justify-between">
 										<div>
-											<p className="text-xs text-slate-500">
+											<p className="text-xs text-[var(--text-muted)]">
 												Autorizaciones hoy
 											</p>
 											<p className="text-2xl font-semibold">{kpis.autHoy}</p>
 										</div>
-										<Stethoscope className="w-8 h-8 text-emerald-600" />
+										<Stethoscope className="w-8 h-8 text-[var(--icon-ok)]" />
 									</div>
 								</Card>
 								<Card>
 									<div className="flex items-center justify-between">
 										<div>
-											<p className="text-xs text-slate-500">
+											<p className="text-xs text-[var(--text-muted)]">
 												Siniestros del mes
 											</p>
 											<p className="text-2xl font-semibold">
 												{currency(kpis.totalMes)}
 											</p>
 										</div>
-										<Wallet className="w-8 h-8 text-indigo-600" />
+										<Wallet className="w-8 h-8 text-[var(--icon-alt)]" />
 									</div>
 								</Card>
 
@@ -761,12 +809,12 @@ export default function ARS_Futuro_App() {
 									<h3 className="font-semibold mb-2">Siniestros por mes</h3>
 									<ResponsiveContainer width="100%" height="100%">
 										<BarChart data={chartMes}>
-											<CartesianGrid strokeDasharray="3 3" />
-											<XAxis dataKey="mes" />
-											<YAxis />
-											<Tooltip />
+											<CartesianGrid strokeDasharray="3 3" stroke={g?.linea} />
+											<XAxis dataKey="mes" tick={g?.eje} stroke={g?.linea} />
+											<YAxis tick={g?.eje} stroke={g?.linea} />
+											<Tooltip contentStyle={g?.tooltip} />
 											<Legend />
-											<Bar dataKey="monto" name="Monto" />
+											<Bar dataKey="monto" name="Monto" fill={g?.serie} />
 										</BarChart>
 									</ResponsiveContainer>
 								</Card>
@@ -777,12 +825,20 @@ export default function ARS_Futuro_App() {
 									</h3>
 									<ResponsiveContainer width="100%" height="100%">
 										<LineChart data={chartAprob}>
-											<CartesianGrid strokeDasharray="3 3" />
-											<XAxis dataKey="plan" />
-											<YAxis domain={[0, 100]} />
-											<Tooltip />
+											<CartesianGrid strokeDasharray="3 3" stroke={g?.linea} />
+											<XAxis dataKey="plan" tick={g?.eje} stroke={g?.linea} />
+											<YAxis
+												domain={[0, 100]}
+												tick={g?.eje}
+												stroke={g?.linea}
+											/>
+											<Tooltip contentStyle={g?.tooltip} />
 											<Legend />
-											<Line dataKey="tasa" name="% Aprobación" />
+											<Line
+												dataKey="tasa"
+												name="% Aprobación"
+												stroke={g?.serie}
+											/>
 										</LineChart>
 									</ResponsiveContainer>
 								</Card>
@@ -799,8 +855,8 @@ export default function ARS_Futuro_App() {
 								<Card>
 									<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
 										<div className="flex items-center gap-2">
-											<Filter className="w-4 h-4 text-slate-400" />
-											<span className="text-sm text-slate-600">
+											<Filter className="w-4 h-4 text-[var(--text-faint)]" />
+											<span className="text-sm text-[var(--text-body)]">
 												{afiliadosFiltrados.length} resultado(s)
 											</span>
 										</div>
@@ -859,7 +915,7 @@ export default function ARS_Futuro_App() {
 									<div className="overflow-x-auto">
 										<table className="data-table w-full text-sm min-w-[800px]">
 											<thead>
-												<tr className="text-left text-slate-500 border-b">
+												<tr className="text-left text-[var(--text-muted)] border-b">
 													<th className="py-2 pr-2 min-w-[150px]">Nombre</th>
 													<th className="py-2 pr-2 min-w-[120px]">Cedula</th>
 													<th className="py-2 pr-2 min-w-[100px]">Plan</th>
@@ -889,7 +945,7 @@ export default function ARS_Futuro_App() {
 															</Badge>
 														</td>
 														<td className="py-2 pr-2">{formatDate(a.desde)}</td>
-														<td className="py-2 pr-2 text-slate-600">
+														<td className="py-2 pr-2 text-[var(--text-body)]">
 															<div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
 																<span className="inline-flex items-center gap-1 text-xs">
 																	<Phone className="w-3 h-3" />
@@ -941,6 +997,7 @@ export default function ARS_Futuro_App() {
 								proveedores={proveedores}
 								onRegistrar={registrarReclamo}
 								addNotification={addNotification}
+								tema={tema}
 							/>
 						)}
 
@@ -991,8 +1048,8 @@ export default function ARS_Futuro_App() {
 				)}
 			</main>
 
-			<footer className="mt-auto border-t border-[#d7e1de] bg-[#fffdf9]/70 backdrop-blur">
-				<div className="mx-auto flex max-w-[90rem] items-center justify-between px-4 py-4 text-xs text-[#6d8585] lg:px-8">
+			<footer className="mt-auto border-t border-[var(--border-soft)] bg-[var(--surface-solid)]/70 backdrop-blur">
+				<div className="mx-auto flex max-w-[90rem] items-center justify-between px-4 py-4 text-xs text-[var(--text-muted)] lg:px-8">
 					<div className="flex items-center gap-2">
 						<img
 							src="/logo_ars.png"
@@ -1119,7 +1176,7 @@ function NuevaAutorizacionModal({
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nueva-autorizacion-afiliado"
 					>
 						Afiliado
@@ -1139,7 +1196,7 @@ function NuevaAutorizacionModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nueva-autorizacion-proveedor"
 					>
 						Proveedor
@@ -1158,7 +1215,7 @@ function NuevaAutorizacionModal({
 				</div>
 				<div className="md:col-span-2">
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nueva-autorizacion-procedimiento"
 					>
 						Procedimiento
@@ -1219,7 +1276,7 @@ function EditarAfiliadoModal({
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="editar-afiliado-telefono"
 					>
 						Teléfono
@@ -1233,7 +1290,7 @@ function EditarAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="editar-afiliado-correo"
 					>
 						Correo
@@ -1318,7 +1375,7 @@ function NuevoAfiliadoModal({
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-nombre-completo"
 					>
 						Nombre completo
@@ -1332,7 +1389,7 @@ function NuevoAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-cedula"
 					>
 						Cédula
@@ -1346,7 +1403,7 @@ function NuevoAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-plan"
 					>
 						Plan
@@ -1361,7 +1418,7 @@ function NuevoAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-estado"
 					>
 						Estado
@@ -1377,7 +1434,7 @@ function NuevoAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-desde"
 					>
 						Desde
@@ -1391,7 +1448,7 @@ function NuevoAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-nacimiento"
 					>
 						Nacimiento
@@ -1405,7 +1462,7 @@ function NuevoAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-telefono"
 					>
 						Teléfono
@@ -1419,7 +1476,7 @@ function NuevoAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-correo"
 					>
 						Correo
@@ -1433,7 +1490,7 @@ function NuevoAfiliadoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="nuevo-afiliado-dependientes"
 					>
 						Dependientes
@@ -1508,7 +1565,7 @@ function AutorizacionesTab({
 						<option>Rechazada</option>
 					</Select>
 					<div className="relative w-full sm:w-auto flex-1 sm:flex-initial">
-						<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+						<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
 						<Input
 							value={q}
 							onChange={setQ}
@@ -1556,7 +1613,7 @@ function AutorizacionesTab({
 				<div className="overflow-x-auto">
 					<table className="data-table w-full text-sm min-w-[800px]">
 						<thead>
-							<tr className="text-left text-slate-500 border-b">
+							<tr className="text-left text-[var(--text-muted)] border-b">
 								<th className="py-2 pr-2 min-w-[60px]">#</th>
 								<th className="py-2 pr-2 min-w-[150px]">Afiliado</th>
 								<th className="py-2 pr-2 min-w-[120px]">Procedimiento</th>
@@ -1638,10 +1695,12 @@ function ReclamosTab({
 	proveedores,
 	onRegistrar,
 	addNotification,
+	tema,
 }) {
 	const [estado, setEstado] = useState("Todos");
 	const [q, setQ] = useState("");
 	const [open, setOpen] = useState(false);
+	const g = graficaDe(tema);
 
 	const data = useMemo(() => {
 		return reclamaciones
@@ -1656,6 +1715,19 @@ function ReclamosTab({
 	}, [reclamaciones, afiliados, estado, q]);
 
 	const total = useMemo(() => data.reduce((s, r) => s + r.monto, 0), [data]);
+	const aprobacionRechazo = useMemo(
+		() => [
+			{
+				name: "Aprobadas",
+				value: data.filter((d) => d.estado === "Aprobada").length,
+			},
+			{
+				name: "Rechazadas",
+				value: data.filter((d) => d.estado === "Rechazada").length,
+			},
+		],
+		[data],
+	);
 
 	return (
 		<motion.div
@@ -1677,7 +1749,7 @@ function ReclamosTab({
 							<option>Rechazada</option>
 						</Select>
 						<div className="relative w-full sm:w-auto flex-1 sm:flex-initial">
-							<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+							<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
 							<Input
 								value={q}
 								onChange={setQ}
@@ -1716,7 +1788,7 @@ function ReclamosTab({
 					<div className="overflow-x-auto">
 						<table className="data-table w-full text-sm min-w-[700px]">
 							<thead>
-								<tr className="text-left text-slate-500 border-b">
+								<tr className="text-left text-[var(--text-muted)] border-b">
 									<th className="py-2 pr-2 min-w-[60px]">#</th>
 									<th className="py-2 pr-2 min-w-[150px]">Afiliado</th>
 									<th className="py-2 pr-2 min-w-[150px]">Proveedor</th>
@@ -1778,21 +1850,18 @@ function ReclamosTab({
 							<PieChart>
 								<Pie
 									dataKey="value"
-									data={[
-										{
-											name: "Aprobadas",
-											value: data.filter((d) => d.estado === "Aprobada").length,
-										},
-										{
-											name: "Rechazadas",
-											value: data.filter((d) => d.estado === "Rechazada")
-												.length,
-										},
-									]}
+									data={aprobacionRechazo}
 									outerRadius={70}
 									label
-								/>
-								<Tooltip />
+								>
+									{aprobacionRechazo.map((sector, i) => (
+										<Cell
+											key={sector.name}
+											fill={g?.sectores[i % g.sectores.length]}
+										/>
+									))}
+								</Pie>
+								<Tooltip contentStyle={g?.tooltip} />
 							</PieChart>
 						</ResponsiveContainer>
 					</Card>
@@ -1838,7 +1907,7 @@ function RegistrarReclamoModal({
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="registrar-reclamo-afiliado"
 					>
 						Afiliado
@@ -1857,7 +1926,7 @@ function RegistrarReclamoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="registrar-reclamo-proveedor"
 					>
 						Proveedor
@@ -1876,7 +1945,7 @@ function RegistrarReclamoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-600"
+						className="text-xs text-[var(--text-body)]"
 						htmlFor="registrar-reclamo-monto"
 					>
 						Monto
@@ -1929,7 +1998,9 @@ function PolizasTab({ polizas, planes }) {
 							<div key={p.id} className="rounded-xl border p-3">
 								<div className="flex items-center justify-between mb-2">
 									<div>
-										<div className="text-sm text-slate-500">{p.id}</div>
+										<div className="text-sm text-[var(--text-muted)]">
+											{p.id}
+										</div>
 										<div className="font-semibold text-sm sm:text-base">
 											{p.empresa}
 										</div>
@@ -1951,19 +2022,21 @@ function PolizasTab({ polizas, planes }) {
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-2 text-sm gap-2">
 									<div>
-										<div className="text-slate-500">Vigencia</div>
+										<div className="text-[var(--text-muted)]">Vigencia</div>
 										<div className="text-xs sm:text-sm">
 											{formatDate(p.desde)} — {formatDate(p.hasta)}
 										</div>
 									</div>
 									<div>
-										<div className="text-slate-500">Prima mensual</div>
+										<div className="text-[var(--text-muted)]">
+											Prima mensual
+										</div>
 										<div className="font-medium">
 											{currency(p.primaMensual)}
 										</div>
 									</div>
 									<div className="sm:col-span-2">
-										<div className="text-slate-500">Asegurados</div>
+										<div className="text-[var(--text-muted)]">Asegurados</div>
 										<div className="font-medium">{p.asegurados}</div>
 									</div>
 								</div>
@@ -1977,7 +2050,7 @@ function PolizasTab({ polizas, planes }) {
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 text-sm">
 						<div>
 							<label
-								className="text-xs text-slate-600"
+								className="text-xs text-[var(--text-body)]"
 								htmlFor="registrar-reclamo-plan"
 							>
 								Plan
@@ -1996,7 +2069,7 @@ function PolizasTab({ polizas, planes }) {
 						</div>
 						<div>
 							<label
-								className="text-xs text-slate-600"
+								className="text-xs text-[var(--text-body)]"
 								htmlFor="registrar-reclamo-personas"
 							>
 								Personas
@@ -2075,7 +2148,7 @@ function ProveedoresTab({ proveedores }) {
 							<option key={t}>{t}</option>
 						))}
 					</Select>
-					<div className="w-full sm:w-auto sm:ml-auto text-sm text-slate-600">
+					<div className="w-full sm:w-auto sm:ml-auto text-sm text-[var(--text-body)]">
 						{data.length} proveedor(es)
 					</div>
 				</div>
@@ -2087,13 +2160,17 @@ function ProveedoresTab({ proveedores }) {
 									<div className="font-semibold text-sm sm:text-base truncate">
 										{p.nombre}
 									</div>
-									<div className="text-xs text-slate-500">{p.ciudad}</div>
+									<div className="text-xs text-[var(--text-muted)]">
+										{p.ciudad}
+									</div>
 								</div>
 								<Badge color="slate" className="ml-2 flex-shrink-0">
 									{p.tipo}
 								</Badge>
 							</div>
-							<div className="text-sm text-slate-600">{p.telefono}</div>
+							<div className="text-sm text-[var(--text-body)]">
+								{p.telefono}
+							</div>
 						</div>
 					))}
 				</div>
@@ -2208,7 +2285,7 @@ function ServiciosTab({
 				<div className="overflow-x-auto">
 					<table className="data-table w-full text-sm min-w-[900px]">
 						<thead>
-							<tr className="text-left text-slate-500 border-b">
+							<tr className="text-left text-[var(--text-muted)] border-b">
 								<th className="py-2 pr-2">Fecha</th>
 								<th className="py-2 pr-2">Afiliado</th>
 								<th className="py-2 pr-2">Proveedor</th>
@@ -2305,7 +2382,7 @@ function RegistrarServicioModal({
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="registrar-servicio-medico-afiliado"
 					>
 						Afiliado
@@ -2324,7 +2401,7 @@ function RegistrarServicioModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="registrar-servicio-medico-proveedor"
 					>
 						Proveedor
@@ -2343,7 +2420,7 @@ function RegistrarServicioModal({
 				</div>
 				<div className="sm:col-span-2">
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="registrar-servicio-medico-descripcion"
 					>
 						Descripción
@@ -2357,7 +2434,7 @@ function RegistrarServicioModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="registrar-servicio-medico-costo"
 					>
 						Costo
@@ -2371,7 +2448,7 @@ function RegistrarServicioModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="registrar-servicio-medico-autorizacion-opcional"
 					>
 						Autorización (opcional)
@@ -2491,7 +2568,7 @@ function PagosTab({
 				<div className="overflow-x-auto">
 					<table className="data-table w-full text-sm min-w-[900px]">
 						<thead>
-							<tr className="text-left text-slate-500 border-b">
+							<tr className="text-left text-[var(--text-muted)] border-b">
 								<th className="py-2 pr-2">Fecha</th>
 								<th className="py-2 pr-2">Proveedor</th>
 								<th className="py-2 pr-2">Servicio</th>
@@ -2598,7 +2675,7 @@ function EmitirPagoModal({
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<div className="sm:col-span-2">
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="emitir-pago-a-proveedor-servicio-pendiente"
 					>
 						Servicio pendiente
@@ -2618,7 +2695,7 @@ function EmitirPagoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="emitir-pago-a-proveedor-proveedor"
 					>
 						Proveedor
@@ -2632,7 +2709,7 @@ function EmitirPagoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="emitir-pago-a-proveedor-monto"
 					>
 						Monto
@@ -2646,7 +2723,7 @@ function EmitirPagoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="emitir-pago-a-proveedor-referencia-bancaria"
 					>
 						Referencia bancaria
@@ -2659,7 +2736,7 @@ function EmitirPagoModal({
 				</div>
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="emitir-pago-a-proveedor-metodo"
 					>
 						Método
@@ -2807,7 +2884,7 @@ function FacturacionTab({
 				<div className="overflow-x-auto">
 					<table className="data-table w-full text-sm min-w-[1000px]">
 						<thead>
-							<tr className="text-left text-slate-500 border-b">
+							<tr className="text-left text-[var(--text-muted)] border-b">
 								<th className="py-2 pr-2">Periodo</th>
 								<th className="py-2 pr-2">Póliza</th>
 								<th className="py-2 pr-2">Empresa</th>
@@ -2921,7 +2998,7 @@ function RegistrarPagoPrimaModal({ open, onClose, factura, onRegistrarPago }) {
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<div>
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="pago-prima-periodo"
 					>
 						Periodo
@@ -2934,7 +3011,10 @@ function RegistrarPagoPrimaModal({ open, onClose, factura, onRegistrarPago }) {
 					/>
 				</div>
 				<div>
-					<label className="text-xs text-slate-500" htmlFor="pago-prima-monto">
+					<label
+						className="text-xs text-[var(--text-muted)]"
+						htmlFor="pago-prima-monto"
+					>
 						Monto
 					</label>
 					<Input
@@ -2946,7 +3026,7 @@ function RegistrarPagoPrimaModal({ open, onClose, factura, onRegistrarPago }) {
 				</div>
 				<div className="sm:col-span-2">
 					<label
-						className="text-xs text-slate-500"
+						className="text-xs text-[var(--text-muted)]"
 						htmlFor="pago-prima-referencia-bancaria"
 					>
 						Referencia bancaria
