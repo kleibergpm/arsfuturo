@@ -1,0 +1,19 @@
+{
+  "name": "arsfuturo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ARS Futuro - backend Express + frontend Vite React",
+  "type": "module",
+  "packageManager": "pnpm@10.20.0",
+  "scripts": {
+    "prepare": "husky",
+    "install:all": "pnpm -C backend install && pnpm -C backend prisma:generate && pnpm -C frontend install",
+    "dev:all": "pnpm -C backend dev && pnpm -C frontend dev",
+    "check": "pnpm -C backend check && pnpm -C frontend check",
+    "typecheck": "pnpm -C backend typecheck && pnpm -C frontend typecheck",
+    "precommit": "pnpm check && pnpm typecheck"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}
